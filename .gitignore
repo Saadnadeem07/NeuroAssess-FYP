@@ -1,0 +1,86 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment files
+# .env
+# .env.local
+# .env.development.local
+# .env.test.local
+# .env.production.local
+# **/.env
+# **/.env.*
+
+# Build outputs
+/dist
+/build
+**/dist
+**/build
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.sublime-workspace
+*.sublime-project
+
+# Testing
+/coverage
+**/coverage
+
+# Production
+/frontend/dist
+/frontend/build
+
+# Temporary files
+*.tmp
+*.temp
+.cache
+.temp
+
+# System Files
+.DS_Store
+Thumbs.db
+
+# Debug
+.debug/
+debug.log
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# Yarn
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+.pnp.* 
+
+# .gitignore
+.env
+.env.local
+server/.env
+client/.env

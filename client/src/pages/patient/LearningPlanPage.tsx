@@ -1,0 +1,102 @@
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
+import UserLearningPlan from "@/components/user/UserLearningPlan";
+import DashboardLayout from "@/components/DashboardLayout";
+import {
+  Brain,
+  Calendar,
+  FileText,
+  Settings,
+  MessageSquare,
+  BookOpen,
+  User,
+} from "lucide-react";
+
+export default function LearningPlanPage() {
+  const { user, currentRole } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check if user is logged in
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+
+    // Check if user is a patient
+    if (currentRole !== "patient") {
+      navigate("/dashboard");
+      return;
+    }
+  }, [user, currentRole, navigate]);
+
+  const menuItems = [
+    { icon: User, label: "Home", id: "home" },
+    { icon: Brain, label: "Initial Test", id: "initial-test" },
+    { icon: Calendar, label: "Appointments", id: "appointments" },
+    { icon: MessageSquare, label: "All PSY", id: "userSeeAllPsy" },
+    { icon: BookOpen, label: "Learning Plan", id: "learning-plan" },
+    { icon: FileText, label: "Reports", id: "reports" },
+    { icon: Settings, label: "Settings", id: "settings" },
+  ];
+
+  const handleNavItemClick = (navItem: string) => {
+    switch (navItem) {
+      case "home":
+        navigate("/patient/dashboard?tab=home");
+        break;
+      case "initial-test":
+        navigate("/patient/initial-test");
+        break;
+      case "appointments":
+        navigate("/patient/dashboard?tab=appointments");
+        break;
+      case "userSeeAllPsy":
+        navigate("/patient/dashboard?tab=psychiatrists");
+        break;
+      case "learning-plan":
+        navigate("/patient/learning-plan");
+        break;
+      case "reports":
+        navigate("/patient/reports");
+        break;
+      case "settings":
+        navigate("/patient/dashboard?tab=settings");
+        break;
+      default:
+        navigate("/patient/dashboard");
+        break;
+    }
+  };
+
+  // If user is not loaded yet, show loading state
+  if (!user) {
+    return (
+      <div className="container mx-auto px-4 py-8 flex justify-center items-center min-h-[60vh]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <DashboardLayout
+      title="Learning Plan"
+      subtitle="Your personalized learning journey"
+      menuItems={menuItems}
+      activeNavItem="learning-plan"
+      onNavItemClick={handleNavItemClick}
+      gradientFrom="sky"
+      gradientTo="indigo"
+      hoverColor="sky-100"
+      activeColor="sky-200"
+      bgColor="white"
+      borderColor="sky-200"
+    >
+      <UserLearningPlan />
+    </DashboardLayout>
+  );
+}
