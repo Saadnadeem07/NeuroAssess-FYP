@@ -10,31 +10,6 @@ Follow these step-by-step instructions to set up and run the project successfull
 
 ---
 
-### 🛠️ **Prerequisites**
-
-Ensure you have the following installed on your system before proceeding:
-
-1. **Node.js** (v16.x or later)
-2. **NPM** (comes with Node.js)
-3. **Git**
-4. Any modern code editor (e.g., **VS Code**)
-
----
-
-## 📂 **Project Structure**
-
-The repository is organized as follows:.
-
-• ./V3  
- ├── backend/  
- ├── frontend/  
- ├── .env  
- ├── .gitignore  
- ├── context.md  
- ├── README.md
-
----
-
 ## 🚩 **Setup Instructions**
 
 # 1️⃣ **Create a Folder**
