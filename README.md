@@ -36,7 +36,7 @@ cd NeuroAssess-FYP
 
 ### 2️⃣ Backend Setup
 ```bash
-cd backend
+cd server
 npm install
 # Configure your .env file here if required (e.g., DB_URI, JWT_SECRET, etc.)
 npm start
@@ -44,7 +44,7 @@ npm start
 
 ### 3️⃣ Frontend Setup
 ```bash
-cd ../frontend
+cd ../client
 npm install
 # Create a .env file and add the API URL (example below)
 # VITE_API_URL=http://localhost:5002/api
@@ -56,15 +56,15 @@ npm run dev
 ## 🗂️ Folder Structure
 ```
 NeuroAssess-FYP/
-├── backend/       # Node.js + Express + MongoDB APIs
-├── frontend/      # React.js (Vite) client with routing and UI
+├── server/       # Node.js + Express + MongoDB APIs
+├── client/      # React.js (Vite) client with routing and UI
 └── README.md      # Project documentation
 ```
 
 ---
 
 ## 🔐 Environment Variables
-Make sure to add a `.env` file in both backend and frontend as needed.
+Make sure to add a `.env` file in both server (backend) and client (frontend) as needed.
 
 ### Backend `.env`
 ```
