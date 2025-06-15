@@ -88,11 +88,12 @@ VITE_API_URL=http://localhost:5002/api
 
 ## 🤝 Contributors
 
-| Name            | GitHub Username           | 
-|-----------------|----------------------------|---------------|
-| Saad Habib      | [@Saadidream](https://github.com/Saadidream)      |
-| Abdul Basit     | [@theabdulbasitt](https://github.com/theabdulbasitt) | 
-| Saad Nadeem     | [@Saadnadeem07](https://github.com/Saadnadeem07)   |
+| Name         | GitHub Username                                      |
+|--------------|------------------------------------------------------|
+| Saad Habib   | [@Saadidream](https://github.com/Saadidream)        |
+| Abdul Basit  | [@theabdulbasitt](https://github.com/theabdulbasitt)|
+| Saad Nadeem  | [@Saadnadeem07](https://github.com/Saadnadeem07)    |
+
 
 ---
 
