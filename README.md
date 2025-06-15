@@ -1,72 +1,110 @@
-# 🧠 NeuroAssess: Dyslexia & Dysgraphia Support System
+# 🧠 NeuroAssess - Dyslexia & Dysgraphia Support System
 
-NeuroAssess is a comprehensive platform designed to diagnose and support individuals with dyslexia and dysgraphia. Built using the **MERN stack**, this project integrates advanced AI models, intuitive UI, and seamless backend operations.
-
----
-
-## 🚀 **Getting Started**
-
-Follow these step-by-step instructions to set up and run the project successfully on your local machine.
+NeuroAssess is an AI-powered web platform developed to assist in the **early detection and personalized support** for students with **dyslexia** and **dysgraphia**. Built using the **MERN stack (MongoDB, Express.js, React.js, Node.js)**, this system features AI-based handwriting analysis, customizable learning paths, role-based dashboards, and professional consultation support.
 
 ---
 
-## 🚩 **Setup Instructions**
+## 🌟 Key Features
 
-# 1️⃣ **Create a Folder**
-
-📂 Create a folder named `FYP` on your laptop.  
-🖱️ Right-click the folder and open it in **VS Code**.
+- ✍️ **AI Handwriting Analysis** for early detection of dyslexia/dysgraphia
+- 📚 **Personalized Learning Plans** powered by ML models
+- 📈 **Progress Tracking** with detailed reports and analytics
+- 👨‍⚕️ **Psychiatrist Consultation System** with appointment scheduling
+- 🧑‍🎓 Role-based access for **Students**, **Parents**, **Psychiatrists**, and **Admins**
+- 🔒 JWT-based **secure authentication & authorization**
 
 ---
 
-# 2️⃣ **Initialize Git**
+## 🚀 Getting Started
+Follow these steps to set up the project on your local machine.
 
-🔗 Set up Git by running the following commands in your terminal:
+### 📦 Prerequisites
+Ensure you have the following installed:
+- Node.js (v18+ recommended)
+- MongoDB (Local or Atlas)
+- Git
 
+---
+
+## 🛠️ Setup Instructions
+
+### 1️⃣ Clone the Repository
 ```bash
-git init
+git clone https://github.com/Saadnadeem07/NeuroAssess-FYP.git
+cd NeuroAssess-FYP
 ```
 
-```bash
-git remote add origin https://github.com/Saadnadeem07/FYP-2_TS.git
-```
-
----
-
-# 3️⃣ **Pull the Repository**
-
-⬇️ Pull the project files from GitHub:
-
-```bash
-git pull origin main
-```
-
----
-
-# 4️⃣ **Install Backend Dependencies**
-
-🛠️ Navigate to the backend folder and install the required dependencies:
-
+### 2️⃣ Backend Setup
 ```bash
 cd backend
 npm install
+# Configure your .env file here if required (e.g., DB_URI, JWT_SECRET, etc.)
+npm start
+```
+
+### 3️⃣ Frontend Setup
+```bash
+cd ../frontend
+npm install
+# Create a .env file and add the API URL (example below)
+# VITE_API_URL=http://localhost:5002/api
+npm run dev
 ```
 
 ---
 
-# 5️⃣ **Install Frontend Dependencies**
-
-💻 Navigate to the frontend folder and install its dependencies:
-
-```bash
-cd ..
-cd frontend
-npm install
+## 🗂️ Folder Structure
+```
+NeuroAssess-FYP/
+├── backend/       # Node.js + Express + MongoDB APIs
+├── frontend/      # React.js (Vite) client with routing and UI
+└── README.md      # Project documentation
 ```
 
-# 🧑‍🤝‍🧑 Contributors
+---
 
-<br>
-Saad Habib (@Saadidream) - Collaborator
-<br>
-Abdul Basit (@theabdulbasitt) - Collaborator
+## 🔐 Environment Variables
+Make sure to add a `.env` file in both backend and frontend as needed.
+
+### Backend `.env`
+```
+PORT=5002
+MONGO_URI=your_mongodb_uri
+JWT_SECRET=your_secret_key
+```
+
+### Frontend `.env`
+```
+VITE_API_URL=http://localhost:5002/api
+```
+
+---
+
+## 🧪 Testing
+- Functional and unit testing is planned via Jest / Mocha (to be added in future versions)
+- Manual testing completed and test cases available in documentation
+
+---
+
+## 🤝 Contributors
+
+| Name            | GitHub Username           | 
+|-----------------|----------------------------|---------------|
+| Saad Habib      | [@Saadidream](https://github.com/Saadidream)      |
+| Abdul Basit     | [@theabdulbasitt](https://github.com/theabdulbasitt) | 
+| Saad Nadeem     | [@Saadnadeem07](https://github.com/Saadnadeem07)   |
+
+---
+
+## 📄 License
+This project is protected under the intellectual property of **FAST-NUCES** and cannot be reused without explicit permission.
+
+---
+
+## 📬 Contact
+For collaboration or research extensions, contact:
+**Saad Nadeem** - saadnadeem5509@gmail.com
+
+---
+
+> "Empowering neurodivergent students through technology."
