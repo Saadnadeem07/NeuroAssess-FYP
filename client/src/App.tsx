@@ -19,7 +19,7 @@ const ApiConnectivityCheck = () => {
   // Extract the base URL without the /api suffix
   const baseUrl = apiUrl
     ? apiUrl.replace(/\/api$/, "")
-    : "http://localhost:5002";
+    : "http://localhost:5000";
 
   useEffect(() => {
     const checkApiConnection = async () => {

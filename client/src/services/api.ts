@@ -17,7 +17,7 @@ interface CustomAxiosInstance extends AxiosInstance {
 }
 
 // Get the API URL from environment variables or use a fallback
-const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5002/api";
+const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 console.log("Using API URL:", apiUrl);
 
 // Create an axios instance with default config

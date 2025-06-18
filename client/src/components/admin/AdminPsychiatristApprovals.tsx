@@ -254,7 +254,7 @@ export default function AdminPsychiatristApprovals() {
           const tryDirectFetch = async () => {
             try {
               const apiUrl =
-                import.meta.env.VITE_API_URL || "http://localhost:5002/api";
+                import.meta.env.VITE_API_URL || "http://localhost:5000/api";
               const url = `${apiUrl}/admin/psychiatrists/${id}/approve`;
               console.log("Trying direct fetch to:", url);
 
@@ -616,7 +616,7 @@ export default function AdminPsychiatristApprovals() {
           }
 
           const apiUrl =
-            import.meta.env.VITE_API_URL || "http://localhost:5002/api";
+            import.meta.env.VITE_API_URL || "http://localhost:5000/api";
           const url = `${apiUrl}/admin/psychiatrists/${testId}/approve`;
 
           // Don't actually approve, just test the connection with a HEAD request

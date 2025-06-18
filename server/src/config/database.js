@@ -10,9 +10,6 @@ const connectDB = async () => {
     });
     console.log("--------------------------------------------");
     console.log("MongoDB Connection Details:");
-    console.log(`--> Host: ${conn.connection.host}`);
-    console.log(`--> Database: ${conn.connection.name}`);
-    console.log(`--> Port: ${conn.connection.port}`);
     console.log("✅ MongoDB Connected Successfully!");
     console.log("--------------------------------------------");
   } catch (error) {

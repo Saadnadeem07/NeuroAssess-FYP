@@ -47,7 +47,7 @@ npm start
 cd ../client
 npm install
 # Create a .env file and add the API URL (example below)
-# VITE_API_URL=http://localhost:5002/api
+# VITE_API_URL=http://localhost:5000/api
 npm run dev
 ```
 
@@ -68,14 +68,14 @@ Make sure to add a `.env` file in both server (backend) and client (frontend) as
 
 ### Backend `.env`
 ```
-PORT=5002
+PORT=5000
 MONGO_URI=your_mongodb_uri
 JWT_SECRET=your_secret_key
 ```
 
 ### Frontend `.env`
 ```
-VITE_API_URL=http://localhost:5002/api
+VITE_API_URL=http://localhost:5000/api
 ```
 
 ---
