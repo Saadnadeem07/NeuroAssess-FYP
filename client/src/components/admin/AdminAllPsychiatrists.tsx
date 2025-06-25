@@ -47,7 +47,7 @@ export default function AdminAllPsychiatrists() {
     try {
       const response = await api.get("/admin/psychiatrists");
       setPsychiatrists(response.data.data || []);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error fetching psychiatrists:", err);
       setError("Failed to load psychiatrists. Please try again later.");
 

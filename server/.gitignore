@@ -50,3 +50,5 @@ debug.log
 .stylelintcache
 
 # Note: .env files are intentionally NOT ignored to allow them to be pushed to GitHub 
+.env
+.env.*

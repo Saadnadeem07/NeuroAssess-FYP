@@ -56,7 +56,7 @@ export default function ResetPassword() {
     }
 
     try {
-      await authService.resetPassword(token!, password);
+      await authService.resetPassword("patient", token!, password);
       setSuccess(true);
     } catch (err: any) {
       setError(

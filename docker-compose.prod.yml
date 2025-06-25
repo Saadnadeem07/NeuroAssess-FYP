@@ -1,0 +1,36 @@
+services:
+  nginx:
+    image: nginx:stable-alpine
+    container_name: neuroassess-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - frontend-build:/usr/share/nginx/html
+    depends_on:
+      - frontend
+      - backend
+
+  frontend:
+    container_name: neuroassess-frontend
+    build:
+      context: ./client
+      dockerfile: Dockerfile.prod
+    env_file:
+      - ./client/.env.prod
+    volumes:
+      - frontend-build:/usr/share/nginx/html
+
+  backend:
+    container_name: neuroassess-backend
+    build:
+      context: ./server
+      dockerfile: Dockerfile.prod
+    env_file:
+      - ./server/.env.prod
+    expose:
+      - "5000"
+    # removed depends_on: mongo
+
+volumes:
+  frontend-build:

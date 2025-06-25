@@ -13,8 +13,11 @@ RUN npm install
 # Copy everything else
 COPY . .
 
-# Expose Vite dev server port
-EXPOSE 3000
+# Expose the backend dev port
+EXPOSE 5000
 
-# Start the frontend in dev mode
-CMD ["npm", "run", "dev", "--", "--host"]
+# Use development environment
+ENV NODE_ENV=development
+
+# Start the dev server
+CMD ["npm", "run", "dev"]

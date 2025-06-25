@@ -191,12 +191,7 @@ export default function PsychiatristDashboard() {
       case "reports":
         return <PsychiatristReports />;
       case "settings":
-        return (
-          <PsychiatristSettings
-            activeSection={activeSettingsSection}
-            onSectionChange={setActiveSettingsSection}
-          />
-        );
+        return <PsychiatristSettings activeTab={activeSettingsSection} />;
       default:
         return <PsychiatristDashboardHome />;
     }
