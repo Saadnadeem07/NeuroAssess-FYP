@@ -2,7 +2,14 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import api from "@/services/api";
 import { motion } from "framer-motion";
-import { MessageSquare, Send, User, Search, ChevronLeft, Plus } from "lucide-react";
+import {
+  MessageSquare,
+  Send,
+  User,
+  Search,
+  ChevronLeft,
+  Plus,
+} from "lucide-react";
 
 interface Conversation {
   partnerId: string;
@@ -34,15 +41,20 @@ export default function UserMessages() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeConversation, setActiveConversation] = useState<string | null>(null);
+  const [activeConversation, setActiveConversation] = useState<string | null>(
+    null
+  );
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showMobileConversation, setShowMobileConversation] = useState(false);
-  const [showNewConversationModal, setShowNewConversationModal] = useState(false);
-  const [availablePsychiatrists, setAvailablePsychiatrists] = useState<Psychiatrist[]>([]);
+  const [showNewConversationModal, setShowNewConversationModal] =
+    useState(false);
+  const [availablePsychiatrists, setAvailablePsychiatrists] = useState<
+    Psychiatrist[]
+  >([]);
   const [loadingPsychiatrists, setLoadingPsychiatrists] = useState(false);
 
   // Fetch conversations
@@ -67,20 +79,20 @@ export default function UserMessages() {
     try {
       setLoading(true);
       const response = await api.get("/messages/conversations");
-      
+
       if (response.data.success) {
         setConversations(response.data.data);
       } else {
         setError("Failed to fetch conversations");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching conversations:", error);
-      
+
       // If the endpoint returns 404, might be a backend not restarted issue
       if (error.response && error.response.status === 404) {
         setError(
           "The messaging API endpoint is not available. " +
-          "Make sure your backend server has been restarted after adding messaging features."
+            "Make sure your backend server has been restarted after adding messaging features."
         );
       } else {
         setError("An error occurred while fetching your conversations");
@@ -95,13 +107,13 @@ export default function UserMessages() {
       setLoadingPsychiatrists(true);
       // Get psychiatrists the patient has appointments with
       const response = await api.get("/appointments/my-psychiatrists");
-      
+
       if (response.data.success) {
         setAvailablePsychiatrists(response.data.data);
       } else {
         console.error("Failed to fetch psychiatrists:", response.data.message);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching psychiatrists:", error);
     } finally {
       setLoadingPsychiatrists(false);
@@ -113,20 +125,20 @@ export default function UserMessages() {
     try {
       const response = await api.post("/messages", {
         receiverId: psychiatristId,
-        content: "Hello, I'd like to start a conversation."
+        content: "Hello, I'd like to start a conversation.",
       });
-      
+
       if (response.data.success) {
         // Refresh conversations
         await fetchConversations();
-        
+
         // Set this as the active conversation
         setActiveConversation(psychiatristId);
-        
+
         // Close the modal
         setShowNewConversationModal(false);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error starting conversation:", error);
       alert("Failed to start conversation. Please try again.");
     }
@@ -141,13 +153,13 @@ export default function UserMessages() {
     try {
       setLoadingMessages(true);
       const response = await api.get(`/messages/conversation/${partnerId}`);
-      
+
       if (response.data.success) {
         setMessages(response.data.data);
       } else {
         console.error("Failed to fetch messages:", response.data.message);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching messages:", error);
     } finally {
       setLoadingMessages(false);
@@ -156,41 +168,43 @@ export default function UserMessages() {
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!newMessage.trim() || !activeConversation) return;
-    
+
     try {
       const response = await api.post("/messages", {
         receiverId: activeConversation,
-        content: newMessage.trim()
+        content: newMessage.trim(),
       });
-      
+
       if (response.data.success) {
         // Add message to UI immediately
-        setMessages(prev => [...prev, response.data.data]);
+        setMessages((prev) => [...prev, response.data.data]);
         setNewMessage("");
-        
+
         // Update the conversation list with the latest message
-        setConversations(prev => {
+        setConversations((prev) => {
           const updated = [...prev];
-          const index = updated.findIndex(c => c.partnerId === activeConversation);
-          
+          const index = updated.findIndex(
+            (c) => c.partnerId === activeConversation
+          );
+
           if (index !== -1) {
             updated[index] = {
               ...updated[index],
               lastMessage: newMessage.trim(),
-              lastMessageTime: new Date().toISOString()
+              lastMessageTime: new Date().toISOString(),
             };
-            
+
             // Move this conversation to the top
             const [conversation] = updated.splice(index, 1);
             updated.unshift(conversation);
           }
-          
+
           return updated;
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error sending message:", error);
       alert("Failed to send message. Please try again.");
     }
@@ -198,31 +212,35 @@ export default function UserMessages() {
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
-    
+
     // If today, return time
     if (date.toDateString() === now.toDateString()) {
       return formatTime(dateString);
     }
-    
+
     // If this year, return month and day
     if (date.getFullYear() === now.getFullYear()) {
-      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+      return date.toLocaleDateString([], { month: "short", day: "numeric" });
     }
-    
+
     // Otherwise, return month, day and year
-    return date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+    return date.toLocaleDateString([], {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
   };
 
   const getFilteredConversations = () => {
     if (!searchTerm) return conversations;
-    
-    return conversations.filter(convo => 
+
+    return conversations.filter((convo) =>
       convo.partnerName.toLowerCase().includes(searchTerm.toLowerCase())
     );
   };
@@ -250,7 +268,7 @@ export default function UserMessages() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
-        <button 
+        <button
           onClick={openNewConversationModal}
           className="px-4 py-2 bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-colors flex items-center gap-2"
         >
@@ -258,7 +276,7 @@ export default function UserMessages() {
           New Conversation
         </button>
       </div>
-      
+
       {conversations.length === 0 ? (
         <div className="bg-sky-50 p-6 rounded-2xl border border-sky-250">
           <div className="flex items-center justify-center flex-col gap-4 py-8">
@@ -267,9 +285,10 @@ export default function UserMessages() {
               No Messages Yet
             </h3>
             <p className="text-gray-600 text-center max-w-md">
-              You don't have any messages yet. Start a conversation with a psychiatrist you have an appointment with.
+              You don't have any messages yet. Start a conversation with a
+              psychiatrist you have an appointment with.
             </p>
-            <button 
+            <button
               onClick={openNewConversationModal}
               className="mt-4 px-6 py-2 bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-colors flex items-center gap-2"
             >
@@ -282,9 +301,9 @@ export default function UserMessages() {
         <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
           <div className="flex h-[600px]">
             {/* Conversation List */}
-            <div 
+            <div
               className={`w-full md:w-1/3 border-r border-gray-200 ${
-                showMobileConversation ? 'hidden md:block' : 'block'
+                showMobileConversation ? "hidden md:block" : "block"
               }`}
             >
               <div className="p-3 border-b border-gray-200">
@@ -301,14 +320,18 @@ export default function UserMessages() {
                   />
                 </div>
               </div>
-              
+
               <div className="overflow-y-auto h-[calc(600px-57px)]">
                 {getFilteredConversations().map((conversation) => (
                   <div
                     key={conversation.partnerId}
-                    onClick={() => setActiveConversation(conversation.partnerId)}
+                    onClick={() =>
+                      setActiveConversation(conversation.partnerId)
+                    }
                     className={`p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors ${
-                      activeConversation === conversation.partnerId ? 'bg-sky-50' : ''
+                      activeConversation === conversation.partnerId
+                        ? "bg-sky-50"
+                        : ""
                     }`}
                   >
                     <div className="flex items-center">
@@ -338,18 +361,18 @@ export default function UserMessages() {
                 ))}
               </div>
             </div>
-            
+
             {/* Message Area */}
-            <div 
+            <div
               className={`w-full md:w-2/3 flex flex-col ${
-                !showMobileConversation ? 'hidden md:flex' : 'flex'
+                !showMobileConversation ? "hidden md:flex" : "flex"
               }`}
             >
               {activeConversation ? (
                 <>
                   {/* Conversation Header */}
                   <div className="p-3 border-b border-gray-200 flex items-center">
-                    <button 
+                    <button
                       onClick={() => setShowMobileConversation(false)}
                       className="md:hidden mr-2"
                     >
@@ -359,10 +382,12 @@ export default function UserMessages() {
                       <User className="h-4 w-4 text-sky-500" />
                     </div>
                     <h3 className="ml-2 text-sm font-medium text-gray-900">
-                      {conversations.find(c => c.partnerId === activeConversation)?.partnerName || "Chat"}
+                      {conversations.find(
+                        (c) => c.partnerId === activeConversation
+                      )?.partnerName || "Chat"}
                     </h3>
                   </div>
-                  
+
                   {/* Messages */}
                   <div className="flex-grow p-4 overflow-y-auto bg-gray-50">
                     {loadingMessages ? (
@@ -375,14 +400,16 @@ export default function UserMessages() {
                           <div
                             key={message._id}
                             className={`flex ${
-                              message.sender === user?._id ? 'justify-end' : 'justify-start'
+                              message.sender === user?._id
+                                ? "justify-end"
+                                : "justify-start"
                             }`}
                           >
                             <div
                               className={`max-w-[75%] rounded-lg px-4 py-2 ${
                                 message.sender === user?._id
-                                  ? 'bg-sky-500 text-white rounded-br-none'
-                                  : 'bg-white text-gray-700 rounded-bl-none border border-gray-200'
+                                  ? "bg-sky-500 text-white rounded-br-none"
+                                  : "bg-white text-gray-700 rounded-bl-none border border-gray-200"
                               }`}
                             >
                               <p className="text-sm">{message.content}</p>
@@ -396,7 +423,7 @@ export default function UserMessages() {
                       </div>
                     )}
                   </div>
-                  
+
                   {/* Message Input */}
                   <div className="p-3 border-t border-gray-200">
                     <form onSubmit={sendMessage} className="flex">
@@ -439,8 +466,10 @@ export default function UserMessages() {
       {showNewConversationModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[80vh] overflow-y-auto">
-            <h3 className="text-xl font-semibold mb-4">Start a New Conversation</h3>
-            
+            <h3 className="text-xl font-semibold mb-4">
+              Start a New Conversation
+            </h3>
+
             {loadingPsychiatrists ? (
               <div className="flex justify-center items-center h-32">
                 <div className="animate-spin h-8 w-8 border-4 border-sky-500 border-t-transparent rounded-full"></div>
@@ -448,10 +477,10 @@ export default function UserMessages() {
             ) : availablePsychiatrists.length === 0 ? (
               <div className="text-center p-6 bg-gray-50 rounded-lg">
                 <p className="text-gray-600">
-                  You don't have any appointments with psychiatrists yet. 
-                  Please book an appointment first.
+                  You don't have any appointments with psychiatrists yet. Please
+                  book an appointment first.
                 </p>
-                <button 
+                <button
                   onClick={() => setShowNewConversationModal(false)}
                   className="mt-4 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
                 >
@@ -484,7 +513,7 @@ export default function UserMessages() {
                   ))}
                 </div>
                 <div className="flex justify-end">
-                  <button 
+                  <button
                     onClick={() => setShowNewConversationModal(false)}
                     className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors mr-2"
                   >
@@ -498,4 +527,4 @@ export default function UserMessages() {
       )}
     </div>
   );
-} 
+}

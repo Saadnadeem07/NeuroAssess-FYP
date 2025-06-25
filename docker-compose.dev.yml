@@ -5,11 +5,11 @@ services:
     container_name: neuroassess-frontend # Sets a custom name for the frontend container
     build:
       context: ./client # Path to the client folder (React app)
-      dockerfile: Dockerfile # Dockerfile to use (in client folder)
+      dockerfile: Dockerfile.dev # Dockerfile to use (in client folder)
     ports:
       - "3000:3000" # Maps local port 3000 to container port 3000 (Vite dev server)
     env_file:
-      - ./client/.env # Loads environment variables from client/.env into container
+      - ./client/.env.dev # Loads environment variables from client/.env into container
     volumes:
       - ./client:/app # Mounts the local client folder to /app in container for live code sync
       - /app/node_modules # Prevents host node_modules from interfering with container's
@@ -21,11 +21,11 @@ services:
     container_name: neuroassess-backend
     build:
       context: ./server
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     ports:
       - "5000:5000"
     env_file:
-      - ./server/.env
+      - ./server/.env.dev
     volumes:
       - ./server:/app
       - /app/node_modules

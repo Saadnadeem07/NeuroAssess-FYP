@@ -17,7 +17,7 @@ export default function ForgotPassword() {
     setError(null);
 
     try {
-      await authService.forgotPassword(email);
+      await authService.forgotPassword("patient", email);
       setSuccess(true);
     } catch (err) {
       if (err instanceof Error) {

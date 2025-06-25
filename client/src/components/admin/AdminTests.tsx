@@ -51,7 +51,7 @@ export default function AdminTests() {
       // Extract unique categories
       const uniqueCategories = [
         ...new Set(response.data.map((test: Test) => test.category)),
-      ];
+      ] as string[];
       setCategories(uniqueCategories);
 
       setError(null);
