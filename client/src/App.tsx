@@ -17,9 +17,11 @@ const ApiConnectivityCheck = () => {
   const [error, setError] = useState<string | null>(null);
   const apiUrl = import.meta.env.VITE_API_URL;
   // Extract the base URL without the /api suffix
-  const baseUrl = apiUrl
-    ? apiUrl.replace(/\/api$/, "")
-    : "http://localhost:5000";
+    const baseUrl = apiUrl || "/api";
+  // const baseUrl = apiUrl
+  //   ? apiUrl.replace(/\/api$/, "")
+  //   : "http://localhost:5000";
+
 
   useEffect(() => {
     const checkApiConnection = async () => {
