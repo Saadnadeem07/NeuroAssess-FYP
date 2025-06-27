@@ -14,18 +14,35 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Add SSH Key
+      - name: Add SSH Key and Known Hosts
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deploy via SSH
+      - name: Deploy to EC2 via SSH
         run: |
-          ssh ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
-            cd /home/ubuntu/ec2/NeuroAssess-FYP
+          ssh -i ~/.ssh/id_rsa ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+            set -e
+
+            echo "🔧 Creating deployment folder if needed..."
+            mkdir -p /home/ubuntu/ec2
+            cd /home/ubuntu/ec2
+
+            echo "📦 Cloning repo if missing..."
+            if [ ! -d "NeuroAssess-FYP" ]; then
+              git clone https://github.com/Saadnadeem07/NeuroAssess-FYP.git
+            fi
+
+            cd NeuroAssess-FYP
+
+            echo "🔄 Pulling latest changes..."
             git pull origin main
-            docker compose -f docker-compose.prod.yml down
+
+            echo "🛠️ Restarting Docker containers..."
+            docker compose -f docker-compose.prod.yml down || true
             docker compose -f docker-compose.prod.yml up --build -d
+
+            echo "✅ Deployment completed successfully!"
           EOF
