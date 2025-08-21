@@ -35,7 +35,7 @@ cd NeuroAssess-FYP
 ```
 
 ### 2️⃣ Backend Setup
-```bash
+```bash 
 cd server
 npm install
 # Configure your .env file here (DB_URI, JWT_SECRET, etc.)
