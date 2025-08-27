@@ -1,7 +1,7 @@
 # 🧠 NeuroAssess - Dyslexia & Dysgraphia Support System
 
 NeuroAssess is an AI-powered web platform developed to assist in the **early detection and personalized support** for students with **dyslexia** and **dysgraphia**. Built using the **MERN stack (MongoDB, Express.js, React.js, Node.js)**, this system features AI-based handwriting analysis, customizable learning paths, role-based dashboards, and professional consultation support.
-
+ 
 ---
 
 ## 🌟 Key Features
