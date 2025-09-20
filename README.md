@@ -12,7 +12,7 @@ NeuroAssess is an AI-powered web platform developed to assist in the **early det
 - 👨‍⚕️ **Psychiatrist Consultation System** with appointment scheduling  
 - 🧑‍🎓 Role-based access for **Students**, **Parents**, **Psychiatrists**, and **Admins**  
 - 🔒 JWT-based **secure authentication & authorization**  
-
+ 
 ---
 
 ## 🚀 Getting Started
