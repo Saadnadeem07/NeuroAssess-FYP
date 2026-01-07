@@ -685,6 +685,7 @@ exports.registerPatient = async (req, res) => {
     }
 
     const { email, password, name, dateOfBirth, gender } = req.body;
+    console.log("Starting patient registration for:", email);
 
     // Register patient
     const { patient, otp, error } = await authModel.registerPatient({
@@ -696,11 +697,14 @@ exports.registerPatient = async (req, res) => {
     });
 
     if (error) {
+      console.error("AuthModel registration error:", error.message);
       return res.status(400).json({
         success: false,
         message: error.message,
       });
     }
+
+    console.log("Patient created successfully, OTP generated:", otp);
 
     // Generate token
     const token = generateToken(patient._id);

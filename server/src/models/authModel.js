@@ -212,12 +212,15 @@ exports.registerPatient = async ({
   gender,
 }) => {
   try {
+    console.log(`[AuthModel] Checking if patient exists: ${email}`);
     // Check if patient already exists
     const existingPatient = await Patient.findOne({ email });
     if (existingPatient) {
+      console.warn(`[AuthModel] Registration failed: Patient already exists (${email})`);
       return { error: new Error("Patient already exists with this email") };
     }
 
+    console.log(`[AuthModel] Creating temporary patient record...`);
     // Create patient with temporary flag
     const patient = await Patient.create({
       email,
@@ -228,19 +231,23 @@ exports.registerPatient = async ({
       isTemporary: true,
     });
 
+    console.log(`[AuthModel] Generating OTP...`);
     // Generate OTP
     const otp = patient.generateOTP();
     await patient.save();
 
+    console.log(`[AuthModel] Sending OTP email to: ${email}`);
     // Send OTP email
     const emailResult = await sendOTPEmail(email, otp);
     if (!emailResult.success) {
+      console.error(`[AuthModel] Email failure:`, emailResult.error);
       throw new Error("Failed to send verification email");
     }
 
+    console.log(`[AuthModel] Registration successful for ${email}`);
     return { patient, otp };
   } catch (error) {
-    console.error("Patient registration error:", error);
+    console.error("[AuthModel] Fatal registration error:", error.message);
     return { error };
   }
 };

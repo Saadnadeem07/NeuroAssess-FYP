@@ -6,7 +6,7 @@
 
 import axios, { AxiosError } from "axios";
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 // Create axios instance
 const api = axios.create({
@@ -268,14 +268,14 @@ class AuthService {
       const response = await api.get(`/auth/${role}/me`, {
         timeout: 10000, // Increase timeout to 10 seconds
       });
-      
+
       console.log(`Current ${role} response:`, response.data);
-      
+
       if (!response.data.success) {
         console.warn(`Failed to get current ${role} user:`, response.data.message);
         return null;
       }
-      
+
       return response.data.data;
     } catch (error) {
       console.error("Error getting current user:", error);
@@ -285,7 +285,7 @@ class AuthService {
         if (error.response) {
           console.error("Response error data:", error.response.data);
           console.error("Response status:", error.response.status);
-          
+
           // If unauthorized, clear token and role
           if (error.response.status === 401) {
             console.warn("Unauthorized access, clearing auth data");

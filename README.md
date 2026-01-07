@@ -1,7 +1,7 @@
 # 🧠 NeuroAssess - Dyslexia & Dysgraphia Support System
 
 NeuroAssess is an AI-powered web platform developed to assist in the **early detection and personalized support** for students with **dyslexia** and **dysgraphia**. Built using the **MERN stack (MongoDB, Express.js, React.js, Node.js)**, this system features AI-based handwriting analysis, customizable learning paths, role-based dashboards, and professional consultation support.
- 
+
 ---
 
 ## 🌟 Key Features
@@ -11,11 +11,12 @@ NeuroAssess is an AI-powered web platform developed to assist in the **early det
 - 📈 **Progress Tracking** with detailed reports and analytics  
 - 👨‍⚕️ **Psychiatrist Consultation System** with appointment scheduling  
 - 🧑‍🎓 Role-based access for **Students**, **Parents**, **Psychiatrists**, and **Admins**  
-- 🔒 JWT-based **secure authentication & authorization**  
- 
+- 🔒 JWT-based **secure authentication & authorization** 
+
 ---
 
 ## 🚀 Getting Started
+
 Follow these steps to set up the project on your local machine.
 
 ### 📦 Prerequisites
@@ -26,7 +27,7 @@ Ensure you have the following installed:
 
 ---
 
-## 🛠️ Setup Instructions (Without Docker)
+## 🛠️ Setup Instructions
 
 ### 1️⃣ Clone the Repository
 ```bash
@@ -35,84 +36,49 @@ cd NeuroAssess-FYP
 ```
 
 ### 2️⃣ Backend Setup
-```bash 
-cd server
-npm install
-# Configure your .env file here (DB_URI, JWT_SECRET, etc.)
-npm run dev
-```
+1. Navigate to the server directory:
+   ```bash
+   cd server
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Create a `.env` file in the `server` folder with the following:
+   ```env
+   PORT=5000
+   MONGO_URI=your_mongodb_connection
+   JWT_SECRET=your_jwt_secret
+   FRONTEND_URL=http://localhost:3000
+   ```
+4. Start the server:
+   ```bash
+   npm run dev
+   ```
 
 ### 3️⃣ Frontend Setup
-```bash
-cd ../client
-npm install
-# Create a .env file and add the API URL (example below)
-# VITE_API_URL=http://localhost:5000/api
-npm run dev
-```
-
----
-
-## 🐳 Docker Setup (Recommended for Easy Local Run)
-
-This project supports **Docker Compose** for quick local setup.
-
-### ✅ Prerequisites
-- Docker
-- Docker Compose
-
-### ▶️ Run the project using Docker:
-```bash
-docker compose up --build
-```
-
-This will:
-- Build and start both frontend (`Vite on port 3000`) and backend (`Express on port 5000`)
-- Auto-mount code with live-reloading via volumes
-- Load env vars from `.env` files (you must create these)
-
-### ⛔ To stop the containers:
-```bash
-docker compose down
-```
-
----
-
-## 🛠️ Docker Project Structure
-```
-NeuroAssess-FYP/
-├── client/                # React frontend
-│   └── Dockerfile
-│   └── .env
-├── server/                # Express backend
-│   └── Dockerfile
-│   └── .env
-├── docker-compose.yaml    # Compose setup for dev
-└── README.md
-```
-
----
-
-## 🔐 Environment Variables
-
-### Backend `.env`
-```
-PORT=5000
-MONGO_URI=your_mongodb_connection
-JWT_SECRET=your_jwt_secret
-FRONTEND_URL=http://localhost:3000
-```
-
-### Frontend `.env`
-```
-VITE_API_URL=http://localhost:5000/api
-```
+1. Navigate to the client directory:
+   ```bash
+   cd ../client
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Create a `.env` file in the `client` folder with the following:
+   ```env
+   VITE_API_URL=http://localhost:5000/api
+   ```
+4. Start the frontend:
+   ```bash
+   npm run dev
+   ```
 
 ---
 
 ## 🧪 Testing
-- Functional and unit testing is planned via Jest / Mocha (to be added in future versions)  
-- Manual testing completed and test cases available in documentation  
+- Manual testing completed and test cases available in documentation.
+- Integrated AI models verified for handwriting analysis.
 
 ---
 
