@@ -139,10 +139,15 @@ secrets/
 credentials/
 
 # =============================================================================
-# Internal-only artifacts (audits, AI workspace, ad-hoc context)
+# Internal-only artifacts (audits, ad-hoc context)
 # Keep these on-disk for the team but out of the public repo.
 # =============================================================================
-.claude/
 docs/BUG_REPORT.md
 context.md
 server/docs/context.md
+
+# .claude/ is committed (CLAUDE.md, settings.json, commands/) — but ignore
+# anything secret-ish that might land there in the future.
+.claude/.credentials.json
+.claude/local/
+.claude/cache/
