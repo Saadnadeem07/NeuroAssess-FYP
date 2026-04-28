@@ -1,20 +1,16 @@
 const mongoose = require("mongoose");
 
 const connectDB = async () => {
+  const uri = process.env.MONGODB_URI || process.env.MONGO_URI;
+  if (!uri) {
+    console.error("[db] MONGODB_URI is not set");
+    process.exit(1);
+  }
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI, {
-      // These options are no longer needed in newer versions of Mongoose
-      // but keeping them for compatibility
-      // useNewUrlParser: true,
-      // useUnifiedTopology: true,
-    });
-    console.log("--------------------------------------------");
-    console.log("MongoDB Connection Details:");
-    console.log("✅ MongoDB Connected Successfully!");
-    console.log("--------------------------------------------");
+    await mongoose.connect(uri);
+    console.log("[db] Connected to MongoDB");
   } catch (error) {
-    console.error("❌ MongoDB Connection Error:", error.message);
-    // Exit process with failure
+    console.error("[db] Connection error:", error.message);
     process.exit(1);
   }
 };

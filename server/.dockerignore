@@ -1,0 +1,16 @@
+node_modules
+npm-debug.log
+.env
+.env.*
+!.env.example
+!.env.dev.example
+!.env.prod.example
+.git
+.gitignore
+coverage
+dist
+build
+.DS_Store
+*.log
+src/uploads
+README.md

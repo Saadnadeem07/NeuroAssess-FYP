@@ -1,24 +1,70 @@
+# =============================================================================
 # Dependencies
+# =============================================================================
 node_modules/
 **/node_modules/
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
 
-# Environment files
-# .env
-# .env.local
-# .env.development.local
-# .env.test.local
-# .env.production.local
-# **/.env
-# **/.env.*
+# =============================================================================
+# Environment files (only *.example variants are committed)
+# =============================================================================
+.env
+.env.*
+!.env.example
+!.env.dev.example
+!.env.prod.example
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.dev.example
+!**/.env.prod.example
 
+# =============================================================================
 # Build outputs
-/dist
-/build
-**/dist
-**/build
+# =============================================================================
+dist/
+build/
+out/
+**/dist/
+**/build/
+**/out/
+*.tsbuildinfo
+**/*.tsbuildinfo
+.vite/
+.next/
+.nuxt/
+.svelte-kit/
+.cache/
+.turbo/
+.parcel-cache/
 
+# =============================================================================
+# User-uploaded handwriting samples (clinical PII; never commit)
+# =============================================================================
+server/src/uploads/*
+!server/src/uploads/.gitkeep
+
+# =============================================================================
+# Test / coverage artifacts
+# =============================================================================
+coverage/
+**/coverage/
+.nyc_output/
+*.lcov
+junit.xml
+test-results/
+
+# =============================================================================
 # Logs
-logs
+# =============================================================================
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -26,61 +72,77 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Editor directories and files
+# =============================================================================
+# Editor / IDE
+# =============================================================================
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
+!.vscode/settings.json.example
+.idea/
+*.iml
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-*.sublime-workspace
-*.sublime-project
+*.swo
+*.swp
+.sublime-workspace
+.sublime-project
 
-# Testing
-/coverage
-**/coverage
+# =============================================================================
+# OS
+# =============================================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
 
-# Production
-/frontend/dist
-/frontend/build
+# =============================================================================
+# Tooling caches
+# =============================================================================
+.npm/
+.eslintcache
+.stylelintcache
+.prettiercache
 
+# =============================================================================
+# Docker
+# =============================================================================
+docker-compose.override.yml
+*.local.yml
+
+# =============================================================================
 # Temporary files
+# =============================================================================
 *.tmp
 *.temp
-.cache
-.temp
+*.bak
+*.orig
+.temp/
+tmp/
 
-# System Files
-.DS_Store
-Thumbs.db
+# =============================================================================
+# Secrets / credentials (defense in depth)
+# =============================================================================
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*-keyfile.json
+secrets/
+credentials/
 
-# Debug
-.debug/
-debug.log
-
-# Optional npm cache directory
-.npm
-
-# Optional eslint cache
-.eslintcache
-
-# Optional stylelint cache
-.stylelintcache
-
-# Yarn
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/sdks
-!.yarn/versions
-.pnp.* 
-
-# .gitignore
-.env
-.env.local
-server/.env
-client/.env
+# =============================================================================
+# Internal-only artifacts (audits, AI workspace, ad-hoc context)
+# Keep these on-disk for the team but out of the public repo.
+# =============================================================================
+.claude/
+docs/BUG_REPORT.md
+context.md
+server/docs/context.md

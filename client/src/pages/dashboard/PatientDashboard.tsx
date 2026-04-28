@@ -25,8 +25,8 @@ import UserSettings from "@/components/user/UserSettings";
 import UserInitialTest from "@/components/user/UserInitialTest";
 import UserReports from "@/components/user/UserReports";
 import UserMessages from "@/components/user/UserMessages";
-import UserSeeOnePsy from "@/components/user/UserSeeOnePsy";
-import UserSeeAllPsy from "@/components/user/UserSeeAllPsy";
+import PsychiatristDetailView from "@/components/user/PsychiatristDetailView";
+import PsychiatristDirectory from "@/components/user/PsychiatristDirectory";
 
 export default function PatientDashboard() {
   const { user, logout, currentRole } = useAuth();
@@ -81,7 +81,7 @@ export default function PatientDashboard() {
           setActiveNavItem("appointments");
           break;
         case "psychiatrists":
-          setActiveNavItem("userSeeAllPsy");
+          setActiveNavItem("psychiatrists");
           break;
         case "messages":
           setActiveNavItem("messages");
@@ -132,12 +132,12 @@ export default function PatientDashboard() {
   const handlePsychiatristSelected = (event: CustomEvent) => {
     const { psychiatristId } = event.detail;
     setSelectedPsychiatristId(psychiatristId);
-    setActiveNavItem("userSeeOnePsy");
+    setActiveNavItem("psychiatrist-detail");
   };
 
   // Add event listener for going back to psychiatrist list
   const handleGoToPsychiatristList = () => {
-    setActiveNavItem("userSeeAllPsy");
+    setActiveNavItem("psychiatrists");
     navigate(`/patient/dashboard?tab=psychiatrists`, { replace: true });
   };
 
@@ -204,7 +204,7 @@ export default function PatientDashboard() {
       case "appointments":
         tabParam = "appointments";
         break;
-      case "userSeeAllPsy":
+      case "psychiatrists":
         tabParam = "psychiatrists";
         break;
       case "messages":
@@ -240,7 +240,7 @@ export default function PatientDashboard() {
     { icon: User, label: "Home", id: "home" },
     { icon: Brain, label: "Initial Test", id: "initial-test" },
     { icon: Calendar, label: "Appointments", id: "appointments" },
-    { icon: Users, label: "All PSY", id: "userSeeAllPsy" },
+    { icon: Users, label: "Psychiatrists", id: "psychiatrists" },
     { icon: MessageSquare, label: "Messages", id: "messages" },
     { icon: BookOpen, label: "Learning Plan", id: "learning-plan" },
     { icon: FileText, label: "Reports", id: "reports" },
@@ -255,16 +255,16 @@ export default function PatientDashboard() {
         return <UserProfile />;
       case "appointments":
         return <UserAppointments />;
-      case "userSeeOnePsy":
-        return <UserSeeOnePsy psychiatristId={selectedPsychiatristId} />;
+      case "psychiatrist-detail":
+        return <PsychiatristDetailView psychiatristId={selectedPsychiatristId} />;
       case "learning-plan":
         return <UserLearningPlan />;
       case "initial-test":
         return <UserInitialTest />;
       case "reports":
         return <UserReports />;
-      case "userSeeAllPsy":
-        return <UserSeeAllPsy />;
+      case "psychiatrists":
+        return <PsychiatristDirectory />;
       case "messages":
         return <UserMessages />;
       case "settings":

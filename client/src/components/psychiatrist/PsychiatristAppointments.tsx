@@ -22,19 +22,18 @@ export default function PsychiatristAppointments() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const psy = user as
+    | (Record<string, unknown> & {
+        availability?: { startTime?: string; endTime?: string; workingDays?: string[] };
+      })
+    | null;
+
   useEffect(() => {
-    // Check if the psychiatrist has set their availability
-    if (
-      user &&
-      user.availability &&
-      user.availability.startTime &&
-      user.availability.endTime
-    ) {
+    if (psy?.availability?.startTime && psy?.availability?.endTime) {
       setHasAvailability(true);
     }
-
-    // Fetch appointments
     fetchAppointments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const fetchAppointments = async () => {
@@ -65,7 +64,8 @@ export default function PsychiatristAppointments() {
   };
 
   // Format time for display (convert 24h to 12h format)
-  const formatTimeForDisplay = (time: string) => {
+  const formatTimeForDisplay = (time?: string) => {
+    if (!time) return "";
     if (!time) return "";
     const [hours, minutes] = time.split(":").map(Number);
     const period = hours >= 12 ? "PM" : "AM";
@@ -219,15 +219,15 @@ export default function PsychiatristAppointments() {
               <Clock className="h-5 w-5 text-sky-500 mr-2" />
               <span className="font-medium">Working Hours:</span>
               <span className="ml-2">
-                {formatTimeForDisplay(user?.availability?.startTime)} -{" "}
-                {formatTimeForDisplay(user?.availability?.endTime)}
+                {formatTimeForDisplay(psy?.availability?.startTime)} -{" "}
+                {formatTimeForDisplay(psy?.availability?.endTime)}
               </span>
             </div>
             <div className="flex items-center text-gray-700 mb-2">
               <Calendar className="h-5 w-5 text-sky-500 mr-2" />
               <span className="font-medium">Working Days:</span>
               <span className="ml-2">
-                {user?.availability?.workingDays?.join(", ") || "Not set"}
+                {psy?.availability?.workingDays?.join(", ") || "Not set"}
               </span>
             </div>
             <p className="text-gray-600 text-sm">

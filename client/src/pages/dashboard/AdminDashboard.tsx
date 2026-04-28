@@ -63,13 +63,6 @@ export default function AdminDashboard() {
 
   const { user, logout, currentRole } = useAuth();
   useEffect(() => {
-    // Debug logging
-    console.log("AdminDashboard - Auth state:", {
-      user,
-      currentRole,
-      hasToken: !!localStorage.getItem("token"),
-    });
-
     // Check if user is logged in and has the correct role
     if (!user) {
       console.log("AdminDashboard - No user found, redirecting to login");

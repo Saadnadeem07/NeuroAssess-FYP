@@ -229,18 +229,6 @@ export default function AdminPsychiatristApprovals() {
       setActionInProgress(true);
       setError(null);
 
-      // Debug: Log authentication token
-      const token = localStorage.getItem("token");
-      console.log("Authentication token available:", !!token);
-
-      if (!token) {
-        setError("Authentication token missing. Please log in again.");
-        setTimeout(() => {
-          window.location.href = "/admin/login";
-        }, 3000);
-        return;
-      }
-
       if (!usingMockData) {
         // Use real API if available
         try {
@@ -260,10 +248,7 @@ export default function AdminPsychiatristApprovals() {
 
               const response = await fetch(url, {
                 method: "PATCH",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${token}`,
-                },
+                headers: { "Content-Type": "application/json" },
                 credentials: "include",
               });
 
@@ -609,12 +594,6 @@ export default function AdminPsychiatristApprovals() {
         );
 
         try {
-          const token = localStorage.getItem("token");
-          if (!token) {
-            setError("Authentication token missing. Please log in again.");
-            return;
-          }
-
           const apiUrl =
             import.meta.env.VITE_API_URL || "http://localhost:5000/api";
           const url = `${apiUrl}/admin/psychiatrists/${testId}/approve`;
@@ -622,9 +601,6 @@ export default function AdminPsychiatristApprovals() {
           // Don't actually approve, just test the connection with a HEAD request
           const testResponse = await fetch(url, {
             method: "HEAD",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
             credentials: "include",
           });
 

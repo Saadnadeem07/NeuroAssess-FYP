@@ -1,129 +1,116 @@
 require("dotenv").config();
+
 const express = require("express");
+const helmet = require("helmet");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-const connectDB = require("./config/database");
-const authModel = require("./models/authModel");
+const morgan = require("morgan");
+const mongoose = require("mongoose");
 
-// Connect to MongoDB
+const connectDB = require("./config/database");
+const authService = require("./services/authService");
+
+const requestId = require("./middleware/requestId");
+const { globalLimiter } = require("./middleware/rateLimit");
+const notFound = require("./middleware/notFound");
+const errorHandler = require("./middleware/errorHandler");
+
+const { CLEANUP_INTERVAL_MS } = require("./utils/constants");
+
+const isProd = process.env.NODE_ENV === "production";
+
 connectDB();
 
 const app = express();
-app.get("/api/health", (req, res) => {
-  res.status(200).send("OK");
+app.set("trust proxy", 1);
+
+// --- CORS allowlist (same in dev + prod) ----------------------------------
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  "http://localhost:3000",
+  "http://localhost:5173",
+].filter(Boolean);
+
+const corsOptions = {
+  origin(origin, callback) {
+    // Allow same-origin / curl / server-to-server (no origin header)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error(`CORS blocked: ${origin}`));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "X-Requested-With", "X-Request-Id"],
+  exposedHeaders: ["X-Request-Id"],
+};
+
+// --- Middleware pipeline (order matters) ----------------------------------
+app.use(requestId);
+app.use(morgan(isProd ? "combined" : "dev"));
+app.use(helmet());
+app.use(cors(corsOptions));
+app.use(express.json({ limit: "5mb" }));
+app.use(express.urlencoded({ extended: true, limit: "5mb" }));
+app.use(cookieParser());
+app.use(globalLimiter);
+
+// --- Health check ---------------------------------------------------------
+app.get("/api/health", async (_req, res) => {
+  const dbState = mongoose.connection.readyState; // 1 === connected
+  res.json({
+    status: dbState === 1 ? "ok" : "degraded",
+    db: dbState === 1 ? "connected" : "disconnected",
+    timestamp: new Date().toISOString(),
+  });
 });
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      const allowedOrigins = [
-        process.env.FRONTEND_URL || "http://localhost:3000", // ✅ Your frontend
-      ];
-
-      if (process.env.NODE_ENV === "development") {
-        console.log(`✅ [DEV MODE] CORS Allowed: ${origin}`);
-        return callback(null, true);
-      }
-
-      if (!origin || allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      } else {
-        console.warn(`❌ CORS Blocked: ${origin}`);
-        return callback(new Error("CORS not allowed"), false);
-      }
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
-    exposedHeaders: ["set-cookie"],
-  })
-);
-
-app.use(express.json());
-app.use(cookieParser());
-
-// Import routes
-const authRoutes = require("./routes/auth");
-const usersRoutes = require("./routes/users");
-const adminRoutes = require("./routes/admin");
-const appointmentsRoutes = require("./routes/appointments");
-
-// Routes
-app.use("/api/auth", authRoutes);
-app.use("/api/users", usersRoutes);
-app.use("/api/admin", adminRoutes);
-app.use("/api/appointments", appointmentsRoutes);
+// --- Routes ---------------------------------------------------------------
+app.use("/api/auth", require("./routes/auth"));
+app.use("/api/users", require("./routes/users"));
+app.use("/api/admin", require("./routes/admin"));
+app.use("/api/appointments", require("./routes/appointments"));
 app.use("/api/tests", require("./routes/tests"));
 app.use("/api/learning-plans", require("./routes/learningPlans"));
 app.use("/api/messages", require("./routes/messages"));
 
-// Health check endpoint
-app.get("/health", (req, res) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString() });
-});
+// --- 404 + error handler (must be last) -----------------------------------
+app.use(notFound);
+app.use(errorHandler);
 
-// Schedule cleanup of temporary users
-// Run every 5 minute
-const CLEANUP_INTERVAL = 5 * 60 * 1000; // 5 minute
-// const CLEANUP_INTERVAL = 1 * 5 * 1000; // 5 minute
-setInterval(async () => {
-  console.log("Running scheduled cleanup of temporary users");
-  try {
-    const now = new Date();
-    const formattedTime = now.toLocaleTimeString("en-US", { hour12: true });
-    const formattedDate = now.toLocaleDateString("en-US");
-    console.log(`Cleanup time => ${formattedTime} - ${formattedDate},`);
-    const cleanPatient = await authModel.cleanupTemporaryPatients();
-    const cleanPsy = await authModel.cleanupTemporaryPsychiatrists();
-    // console.log("Cleanup result:", cleanPatient);
-    // console.log("Cleanup result:", cleanPsy);
-    console.log("--------------------------------------------------");
-  } catch (error) {
-    console.error("Error in scheduled cleanup:", error);
-  }
-}, CLEANUP_INTERVAL);
+// --- Scheduled cleanup of unverified accounts -----------------------------
+let cleanupHandle = null;
+const startCleanupJob = () => {
+  cleanupHandle = setInterval(async () => {
+    if (mongoose.connection.readyState !== 1) return;
+    try {
+      await authService.cleanupTemporaryPatients();
+      await authService.cleanupTemporaryPsychiatrists();
+    } catch (err) {
+      console.error("[cleanup] error:", err.message);
+    }
+  }, CLEANUP_INTERVAL_MS);
+};
 
-// // Run cleanup on startup as well
-// setTimeout(async () => {
-//   console.log("--------------------------------------------");
-//   console.log("✅ Running initial cleanup of temporary users");
-//   try {
-//     const result = await authModel.cleanupTemporaryUsers();
-//     console.log("✅ Initial cleanup result:", result);
-//   } catch (error) {
-//     console.error("❌ Error in initial cleanup:", error);
-//   }
-//   console.log("--------------------------------------------");
-// }, 5000); // Wait 5 seconds after startup
+mongoose.connection.once("connected", startCleanupJob);
 
-// Global error handler
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  const statusCode = err.statusCode || 500;
-  res.status(statusCode).json({
-    success: false,
-    message:
-      process.env.NODE_ENV === "development"
-        ? err.message
-        : "Something went wrong!",
-    stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
-  });
-});
+const shutdown = (signal) => {
+  console.log(`[shutdown] received ${signal}`);
+  if (cleanupHandle) clearInterval(cleanupHandle);
+  mongoose.connection.close(false).finally(() => process.exit(0));
+};
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGTERM", () => shutdown("SIGTERM"));
 
-// Handle unhandled promise rejections
 process.on("unhandledRejection", (err) => {
-  console.error("Unhandled Promise Rejection:", err);
-  // Close server & exit process
-  process.exit(1);
+  console.error("[unhandled-rejection]", err);
+});
+process.on("uncaughtException", (err) => {
+  console.error("[uncaught-exception]", err);
 });
 
-const PORT = process.env.PORT || 5000; // 👈 Match this with .env
-
+const PORT = Number(process.env.PORT) || 5000;
 app.listen(PORT, () => {
-  console.log(`--------------------------------------------`);
-  console.log(
-    `🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT} 🔌`
-  );
-  console.log(`✅ Backend: http://localhost:${PORT}`);
-  console.log(`✅ Frontend: http://localhost:3000`);
+  console.log(`[server] listening on :${PORT} (${process.env.NODE_ENV || "development"})`);
 });
+
+module.exports = app;

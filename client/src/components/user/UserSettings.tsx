@@ -57,16 +57,21 @@ export default function UserSettings() {
 
   useEffect(() => {
     if (user) {
+      const u = user as Record<string, unknown> & {
+        dateOfBirth?: string | number | Date;
+        gender?: string;
+        emergencyContact?: { name?: string; relationship?: string; phone?: string };
+      };
       setFormData((prev) => ({
         ...prev,
         name: user.name || "",
-        dateOfBirth: user.dateOfBirth
-          ? new Date(user.dateOfBirth).toISOString().split("T")[0]
+        dateOfBirth: u.dateOfBirth
+          ? new Date(u.dateOfBirth).toISOString().split("T")[0]
           : "",
-        gender: user.gender || "",
-        emergencyContactName: user.emergencyContact?.name || "",
-        emergencyContactRelationship: user.emergencyContact?.relationship || "",
-        emergencyContactPhone: user.emergencyContact?.phone || "",
+        gender: u.gender || "",
+        emergencyContactName: u.emergencyContact?.name || "",
+        emergencyContactRelationship: u.emergencyContact?.relationship || "",
+        emergencyContactPhone: u.emergencyContact?.phone || "",
       }));
     }
   }, [user]);

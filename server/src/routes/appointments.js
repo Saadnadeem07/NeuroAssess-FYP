@@ -1,13 +1,19 @@
 const express = require("express");
 const router = express.Router();
+const nodemailer = require("nodemailer");
+
 const Appointment = require("../models/Appointment");
-const { protectPatient, protectPsychiatrist } = require("../middleware/auth");
 const Patient = require("../models/Patient");
 const Psychiatrist = require("../models/Psychiatrist");
-const nodemailer = require("nodemailer");
-const jwt = require("jsonwebtoken");
 
-// Configure nodemailer
+const {
+  protectPatient,
+  protectPsychiatrist,
+  protectPatientOrPsychiatrist,
+} = require("../middleware/auth");
+const asyncHandler = require("../utils/asyncHandler");
+const AppError = require("../utils/AppError");
+
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -16,319 +22,153 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Helper function to send appointment confirmation emails
-const sendAppointmentEmail = async (appointment) => {
-  try {
-    // Format date consistently, ensuring we use UTC to avoid timezone issues
-    const appointmentDate = new Date(appointment.date);
-    const formattedDate = appointmentDate.toLocaleDateString('en-US', {
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric',
-      timeZone: 'UTC' // Ensure we interpret the date in UTC
-    });
+const formatDate = (date) =>
+  new Date(date).toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: "UTC",
+  });
 
-    // Email to patient
-    await transporter.sendMail({
+const sendAppointmentEmail = async (appointment) => {
+  const formattedDate = formatDate(appointment.date);
+  await Promise.allSettled([
+    transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: appointment.patientEmail,
       subject: "Your Appointment Confirmation",
-      html: `
-        <h1>Appointment Confirmation</h1>
+      html: `<h1>Appointment Confirmation</h1>
         <p>Dear ${appointment.patientName},</p>
-        <p>Your appointment with Dr. ${
-          appointment.psychiatristName
-        } has been scheduled for:</p>
+        <p>Your appointment with Dr. ${appointment.psychiatristName} has been scheduled for:</p>
         <p><strong>Date:</strong> ${formattedDate}</p>
-        <p><strong>Time:</strong> ${appointment.timeSlot}</p>
-        <p>Thank you for using our service.</p>
-        <p>Best regards,<br>Mental Health Support Team</p>
-      `,
-    });
-
-    // Email to psychiatrist
-    await transporter.sendMail({
+        <p><strong>Time:</strong> ${appointment.timeSlot}</p>`,
+    }),
+    transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: appointment.psychiatristEmail,
       subject: "New Appointment Scheduled",
-      html: `
-        <h1>New Appointment</h1>
+      html: `<h1>New Appointment</h1>
         <p>Dear Dr. ${appointment.psychiatristName},</p>
-        <p>A new appointment has been scheduled with patient ${
-          appointment.patientName
-        }:</p>
+        <p>A new appointment has been scheduled with patient ${appointment.patientName}:</p>
         <p><strong>Date:</strong> ${formattedDate}</p>
-        <p><strong>Time:</strong> ${appointment.timeSlot}</p>
-        <p>Thank you for your service.</p>
-        <p>Best regards,<br>Mental Health Support Team</p>
-      `,
-    });
-
-    console.log("Appointment confirmation emails sent successfully");
-  } catch (error) {
-    console.error("Error sending appointment emails:", error);
-  }
+        <p><strong>Time:</strong> ${appointment.timeSlot}</p>`,
+    }),
+  ]);
 };
 
-// Helper function to send appointment cancellation emails
 const sendCancellationEmail = async (appointment, cancelledBy) => {
-  try {
-    // Format date consistently, ensuring we use UTC to avoid timezone issues
-    const appointmentDate = new Date(appointment.date);
-    const formattedDate = appointmentDate.toLocaleDateString('en-US', {
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric',
-      timeZone: 'UTC' // Ensure we interpret the date in UTC
-    });
-
-    // Email to patient
-    await transporter.sendMail({
+  const formattedDate = formatDate(appointment.date);
+  await Promise.allSettled([
+    transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: appointment.patientEmail,
       subject: "Appointment Cancellation Notice",
-      html: `
-        <h1>Appointment Cancellation</h1>
+      html: `<h1>Appointment Cancellation</h1>
         <p>Dear ${appointment.patientName},</p>
-        <p>Your appointment with Dr. ${
-          appointment.psychiatristName
-        } scheduled for:</p>
-        <p><strong>Date:</strong> ${formattedDate}</p>
-        <p><strong>Time:</strong> ${appointment.timeSlot}</p>
-        <p>has been cancelled ${
-          cancelledBy === "psychiatrist"
-            ? "by the psychiatrist"
-            : "at your request"
-        }.</p>
-        <p>If you did not request this cancellation or have any questions, please contact our support team.</p>
-        <p>Best regards,<br>Mental Health Support Team</p>
-      `,
-    });
-
-    // Email to psychiatrist
-    await transporter.sendMail({
+        <p>Your appointment with Dr. ${appointment.psychiatristName} on
+           <strong>${formattedDate}</strong> at <strong>${appointment.timeSlot}</strong>
+           has been cancelled ${
+             cancelledBy === "psychiatrist" ? "by the psychiatrist" : "at your request"
+           }.</p>`,
+    }),
+    transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: appointment.psychiatristEmail,
       subject: "Appointment Cancellation Notice",
-      html: `
-        <h1>Appointment Cancellation</h1>
+      html: `<h1>Appointment Cancellation</h1>
         <p>Dear Dr. ${appointment.psychiatristName},</p>
-        <p>The appointment with patient ${
-          appointment.patientName
-        } scheduled for:</p>
-        <p><strong>Date:</strong> ${formattedDate}</p>
-        <p><strong>Time:</strong> ${appointment.timeSlot}</p>
-        <p>has been cancelled ${
-          cancelledBy === "patient" ? "by the patient" : "at your request"
-        }.</p>
-        <p>This time slot is now available for other appointments.</p>
-        <p>Best regards,<br>Mental Health Support Team</p>
-      `,
-    });
-
-    console.log("Appointment cancellation emails sent successfully");
-  } catch (error) {
-    console.error("Error sending cancellation emails:", error);
-  }
+        <p>Appointment with ${appointment.patientName} on <strong>${formattedDate}</strong>
+           at <strong>${appointment.timeSlot}</strong> has been cancelled
+           ${cancelledBy === "patient" ? "by the patient" : "at your request"}.</p>`,
+    }),
+  ]);
 };
 
-// Middleware to check if the user is either a patient or a psychiatrist
-const protectPatientOrPsychiatrist = async (req, res, next) => {
-  try {
-    let token;
-
-    // Get token from Authorization header
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith("Bearer")
-    ) {
-      token = req.headers.authorization.split(" ")[1];
-    }
-    // Get token from cookie
-    else if (req.cookies && req.cookies.token) {
-      token = req.cookies.token;
-    }
-
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "Not authorized to access this route",
-      });
-    }
-
-    try {
-      // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-      // Try to get patient from token
-      const patient = await Patient.findById(decoded.id).select("-password");
-      if (patient) {
-        req.patient = patient;
-        return next();
-      }
-
-      // If not a patient, try to get psychiatrist from token
-      const psychiatrist = await Psychiatrist.findById(decoded.id).select(
-        "-password"
-      );
-      if (psychiatrist) {
-        req.psychiatrist = psychiatrist;
-        return next();
-      }
-
-      // If neither patient nor psychiatrist
-      return res.status(401).json({
-        success: false,
-        message: "Not authorized to access this route",
-      });
-    } catch (error) {
-      return res.status(401).json({
-        success: false,
-        message: "Not authorized to access this route",
-      });
-    }
-  } catch (error) {
-    next(error);
-  }
-};
-
-// Create a new appointment (Patient books an appointment)
-router.post("/", protectPatient, async (req, res) => {
-  try {
+router.post(
+  "/",
+  protectPatient,
+  asyncHandler(async (req, res) => {
     const { psychiatristId, date, timeSlot } = req.body;
-
     if (!psychiatristId || !date || !timeSlot) {
-      return res.status(400).json({
-        success: false,
-        message: "Psychiatrist ID, date, and time slot are required",
-      });
+      throw AppError.badRequest("Psychiatrist ID, date, and time slot are required");
     }
 
-    // Get patient and psychiatrist details
     const patient = await Patient.findById(req.patient._id);
     const psychiatrist = await Psychiatrist.findById(psychiatristId);
-
     if (!patient || !psychiatrist) {
-      return res.status(404).json({
-        success: false,
-        message: "Patient or psychiatrist not found",
-      });
+      throw AppError.notFound("Patient or psychiatrist not found");
     }
 
-    // Properly parse the appointment date to preserve the correct day
-    // Parse the ISO string but ensure we keep the correct date regardless of timezone
     const isoDate = new Date(date);
-    // Extract year, month, and day
     const year = isoDate.getUTCFullYear();
     const month = isoDate.getUTCMonth();
     const day = isoDate.getUTCDate();
-    // Create new date object with the correct date at noon to avoid timezone issues
     const appointmentDate = new Date(Date.UTC(year, month, day, 12, 0, 0));
-    
-    const now = new Date();
-
-    // Set both dates to the start of their respective days for date comparison
     const appointmentDay = new Date(Date.UTC(year, month, day, 0, 0, 0));
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     if (appointmentDay < today) {
-      return res.status(400).json({
-        success: false,
-        message: "Cannot book appointments for past dates",
-      });
+      throw AppError.badRequest("Cannot book appointments for past dates");
     }
 
-    // If the appointment is for today, check if the time slot is in the past
     if (appointmentDay.getTime() === today.getTime()) {
-      // Parse the time from the time slot (e.g., "2:00 PM - 2:30 PM" -> "2:00 PM")
       const timeStart = timeSlot.split(" - ")[0];
       const [hourStr, minuteStr] = timeStart.split(":");
-      let [hour, minute] = [
-        parseInt(hourStr),
-        parseInt(minuteStr.split(" ")[0]),
-      ];
+      let hour = parseInt(hourStr, 10);
+      const minute = parseInt(minuteStr.split(" ")[0], 10);
       const isPM = timeStart.includes("PM");
-
-      // Convert to 24-hour format
       if (isPM && hour !== 12) hour += 12;
       if (!isPM && hour === 12) hour = 0;
-
-      // Create a date object with the appointment time
-      const appointmentDateTime = new Date(appointmentDate);
-      appointmentDateTime.setHours(hour, minute, 0, 0);
-
-      // Check if the appointment time is in the past
-      if (appointmentDateTime < now) {
-        return res.status(400).json({
-          success: false,
-          message: "Cannot book appointments for past time slots",
-        });
+      const apptDateTime = new Date(appointmentDate);
+      apptDateTime.setHours(hour, minute, 0, 0);
+      if (apptDateTime < new Date()) {
+        throw AppError.badRequest("Cannot book appointments for past time slots");
       }
     }
 
-    // Get the correct day of week based on the UTC date
-    const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const daysOfWeek = [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ];
     const dayOfWeek = daysOfWeek[appointmentDay.getUTCDay()];
-
-    if (!psychiatrist.availability || !psychiatrist.availability.workingDays) {
-      return res.status(400).json({
-        success: false,
-        message: "Psychiatrist has not set their availability",
-      });
+    if (!psychiatrist.availability?.workingDays?.length) {
+      throw AppError.badRequest("Psychiatrist has not set their availability");
     }
-
     if (!psychiatrist.availability.workingDays.includes(dayOfWeek)) {
-      return res.status(400).json({
-        success: false,
-        message: "Psychiatrist is not available on this day",
-      });
+      throw AppError.badRequest("Psychiatrist is not available on this day");
     }
 
-    // Check if the time slot is within the psychiatrist's working hours
-    // This would require parsing the time slot string and comparing with availability
-    // For simplicity, we'll skip this check for now
-
-    // Create start and end of day for the appointment date
     const startOfDay = new Date(appointmentDate);
     startOfDay.setHours(0, 0, 0, 0);
-
     const endOfDay = new Date(appointmentDate);
     endOfDay.setHours(23, 59, 59, 999);
 
-    // Check if the psychiatrist already has an appointment at this time
-    const existingAppointment = await Appointment.findOne({
+    const conflict = await Appointment.findOne({
       psychiatrist: psychiatristId,
       date: { $gte: startOfDay, $lte: endOfDay },
       timeSlot,
       status: { $ne: "cancelled" },
     });
+    if (conflict) throw AppError.conflict("This time slot is already booked");
 
-    if (existingAppointment) {
-      return res.status(400).json({
-        success: false,
-        message: "This time slot is already booked",
-      });
-    }
-
-    // Check if the patient already has an appointment at this time
-    const existingPatientAppointment = await Appointment.findOne({
+    const patientConflict = await Appointment.findOne({
       patient: patient._id,
       date: { $gte: startOfDay, $lte: endOfDay },
       timeSlot,
       status: { $ne: "cancelled" },
     });
-
-    if (existingPatientAppointment) {
-      return res.status(400).json({
-        success: false,
-        message: "You already have an appointment at this time",
-      });
+    if (patientConflict) {
+      throw AppError.conflict("You already have an appointment at this time");
     }
 
-    // Create the appointment
     const appointment = await Appointment.create({
       patient: patient._id,
       psychiatrist: psychiatrist._id,
@@ -340,316 +180,162 @@ router.post("/", protectPatient, async (req, res) => {
       psychiatristEmail: psychiatrist.email,
     });
 
-    // Send confirmation emails
-    await sendAppointmentEmail(appointment);
+    sendAppointmentEmail(appointment).catch((err) =>
+      console.warn("[appointments] confirmation email failed", err.message)
+    );
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       data: appointment,
       message: "Appointment booked successfully",
     });
-  } catch (error) {
-    console.error("Book appointment error:", error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
+  })
+);
 
-// Get all appointments for a patient
-router.get("/patient", protectPatient, async (req, res) => {
-  try {
-    const appointments = await Appointment.find({
-      patient: req.patient._id,
-    }).sort({ date: 1 });
+router.get(
+  "/patient",
+  protectPatient,
+  asyncHandler(async (req, res) => {
+    const appointments = await Appointment.find({ patient: req.patient._id }).sort({ date: 1 });
+    return res.json({ success: true, data: appointments });
+  })
+);
 
-    res.json({
-      success: true,
-      data: appointments,
+router.get(
+  "/psychiatrist",
+  protectPsychiatrist,
+  asyncHandler(async (req, res) => {
+    const appointments = await Appointment.find({ psychiatrist: req.psychiatrist._id }).sort({
+      date: 1,
     });
-  } catch (error) {
-    console.error("Get patient appointments error:", error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
+    return res.json({ success: true, data: appointments });
+  })
+);
 
-// Get all appointments for a psychiatrist
-router.get("/psychiatrist", protectPsychiatrist, async (req, res) => {
-  try {
-    const appointments = await Appointment.find({
-      psychiatrist: req.psychiatrist._id,
-    }).sort({ date: 1 });
-
-    res.json({
-      success: true,
-      data: appointments,
-    });
-  } catch (error) {
-    console.error("Get psychiatrist appointments error:", error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-// Cancel an appointment (can be done by either patient or psychiatrist)
-router.put("/cancel/:id", protectPatientOrPsychiatrist, async (req, res) => {
-  try {
+router.put(
+  "/cancel/:id",
+  protectPatientOrPsychiatrist,
+  asyncHandler(async (req, res) => {
     const appointment = await Appointment.findById(req.params.id);
+    if (!appointment) throw AppError.notFound("Appointment not found");
 
-    if (!appointment) {
-      return res.status(404).json({
-        success: false,
-        message: "Appointment not found",
-      });
-    }
-
-    // Check if the user is authorized to cancel this appointment
-    let isAuthorized = false;
-    let cancelledBy = "";
-
+    let cancelledBy = null;
     if (
       req.patient &&
       appointment.patient.toString() === req.patient._id.toString()
     ) {
-      isAuthorized = true;
       cancelledBy = "patient";
     } else if (
       req.psychiatrist &&
       appointment.psychiatrist.toString() === req.psychiatrist._id.toString()
     ) {
-      isAuthorized = true;
       cancelledBy = "psychiatrist";
     }
+    if (!cancelledBy) throw AppError.forbidden("Not authorized to cancel this appointment");
 
-    if (!isAuthorized) {
-      return res.status(403).json({
-        success: false,
-        message: "Not authorized to cancel this appointment",
-      });
-    }
-
-    // Update the appointment status
     appointment.status = "cancelled";
     await appointment.save();
 
-    // Send cancellation emails
-    await sendCancellationEmail(appointment, cancelledBy);
+    sendCancellationEmail(appointment, cancelledBy).catch((err) =>
+      console.warn("[appointments] cancellation email failed", err.message)
+    );
 
-    res.json({
+    return res.json({
       success: true,
       data: appointment,
       message: "Appointment cancelled successfully",
     });
-  } catch (error) {
-    console.error("Cancel appointment error:", error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
+  })
+);
 
-// Get booked slots for a specific psychiatrist and date
 router.get(
   "/booked-slots/:psychiatristId",
   protectPatientOrPsychiatrist,
-  async (req, res) => {
-    try {
-      const { psychiatristId } = req.params;
-      const { date } = req.query;
-
-      if (!psychiatristId || !date) {
-        return res.status(400).json({
-          success: false,
-          message: "Psychiatrist ID and date are required",
-        });
-      }
-
-      // Parse the date and create start/end of day
-      const queryDate = new Date(date);
-      const startOfDay = new Date(queryDate);
-      startOfDay.setHours(0, 0, 0, 0);
-
-      const endOfDay = new Date(queryDate);
-      endOfDay.setHours(23, 59, 59, 999);
-
-      // Find all appointments for this psychiatrist on this date that are not cancelled
-      const appointments = await Appointment.find({
-        psychiatrist: psychiatristId,
-        date: { $gte: startOfDay, $lte: endOfDay },
-        status: { $ne: "cancelled" },
-      });
-
-      // Extract the time slots
-      const bookedSlots = appointments.map(
-        (appointment) => appointment.timeSlot
-      );
-
-      res.json({
-        success: true,
-        data: bookedSlots,
-      });
-    } catch (error) {
-      console.error("Get booked slots error:", error);
-      res.status(500).json({ success: false, message: error.message });
+  asyncHandler(async (req, res) => {
+    const { psychiatristId } = req.params;
+    const { date } = req.query;
+    if (!psychiatristId || !date) {
+      throw AppError.badRequest("Psychiatrist ID and date are required");
     }
-  }
-);
+    const queryDate = new Date(date);
+    const startOfDay = new Date(queryDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(queryDate);
+    endOfDay.setHours(23, 59, 59, 999);
 
-// Get all unique patients for a psychiatrist
-router.get("/psychiatrist/patients", protectPsychiatrist, async (req, res) => {
-  try {
-    // Find all unique patients who have appointments with this psychiatrist
-    const appointments = await Appointment.find({
-      psychiatrist: req.psychiatrist._id,
-      status: { $ne: "cancelled" }, // Exclude cancelled appointments
-    }).sort({ date: 1 });
-
-    // Extract unique patient IDs
-    const patientIds = [...new Set(appointments.map(app => app.patient.toString()))];
-    
-    // Create patient objects with relevant information
-    const patients = appointments.reduce((result, appointment) => {
-      const patientId = appointment.patient.toString();
-      
-      // If we haven't added this patient yet, add them to our result
-      if (!result[patientId]) {
-        result[patientId] = {
-          _id: patientId,
-          name: appointment.patientName,
-          email: appointment.patientEmail,
-          appointmentCount: 1,
-          lastAppointment: appointment.date,
-          nextAppointment: null,
-          status: "Active"
-        };
-      } else {
-        // Update appointment count
-        result[patientId].appointmentCount++;
-        
-        // Update last appointment if this one is more recent
-        if (new Date(appointment.date) > new Date(result[patientId].lastAppointment)) {
-          result[patientId].lastAppointment = appointment.date;
-        }
-      }
-      
-      return result;
-    }, {});
-    
-    // Calculate the next upcoming appointment for each patient
-    const now = new Date();
-    appointments.forEach(appointment => {
-      const patientId = appointment.patient.toString();
-      const appointmentDate = new Date(appointment.date);
-      
-      // If the appointment is in the future and is either the first future appointment
-      // we've found for this patient or is sooner than the one we've already found
-      if (
-        appointmentDate > now && 
-        appointment.status === "scheduled" &&
-        (!patients[patientId].nextAppointment || 
-         appointmentDate < new Date(patients[patientId].nextAppointment))
-      ) {
-        patients[patientId].nextAppointment = appointment.date;
-      }
-    });
-
-    // Convert the patients object to an array
-    const patientsList = Object.values(patients);
-
-    res.json({
-      success: true,
-      count: patientsList.length,
-      data: patientsList
-    });
-  } catch (error) {
-    console.error("Get psychiatrist patients error:", error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-// Simple endpoint to test if patients route is working
-router.get("/psychiatrist/patients-test", protectPsychiatrist, async (req, res) => {
-  try {
-    res.json({
-      success: true,
-      message: "Test endpoint is working properly",
-      data: []
-    });
-  } catch (error) {
-    console.error("Test endpoint error:", error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-// Get all psychiatrists that a patient has appointments with
-router.get("/my-psychiatrists", protectPatient, async (req, res) => {
-  try {
-    const patientId = req.patient._id;
-
-    // Find all active appointments for this patient
-    const appointments = await Appointment.find({
-      patient: patientId,
-      status: { $ne: "cancelled" }
-    }).populate("psychiatrist", "name");
-
-    // Extract unique psychiatrists
-    const psychiatrists = [];
-    const psychiatristIds = new Set();
-
-    appointments.forEach(appointment => {
-      if (appointment.psychiatrist && !psychiatristIds.has(appointment.psychiatrist._id.toString())) {
-        psychiatristIds.add(appointment.psychiatrist._id.toString());
-        psychiatrists.push({
-          _id: appointment.psychiatrist._id,
-          name: appointment.psychiatrist.name
-        });
-      }
-    });
-
-    res.json({
-      success: true,
-      data: psychiatrists
-    });
-  } catch (error) {
-    console.error("Error fetching psychiatrists:", error);
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-});
-
-// Get all patients that have appointments with a psychiatrist
-router.get("/psychiatrist/patients", protectPsychiatrist, async (req, res) => {
-  try {
-    const psychiatristId = req.psychiatrist._id;
-
-    // Find all active appointments for this psychiatrist
     const appointments = await Appointment.find({
       psychiatrist: psychiatristId,
-      status: { $ne: "cancelled" }
-    }).populate("patient", "name");
+      date: { $gte: startOfDay, $lte: endOfDay },
+      status: { $ne: "cancelled" },
+    });
+    return res.json({ success: true, data: appointments.map((a) => a.timeSlot) });
+  })
+);
 
-    // Extract unique patients
-    const patients = [];
-    const patientIds = new Set();
+router.get(
+  "/psychiatrist/patients",
+  protectPsychiatrist,
+  asyncHandler(async (req, res) => {
+    const appointments = await Appointment.find({
+      psychiatrist: req.psychiatrist._id,
+      status: { $ne: "cancelled" },
+    })
+      .sort({ date: 1 })
+      .populate("patient", "name");
 
-    appointments.forEach(appointment => {
-      if (appointment.patient && !patientIds.has(appointment.patient._id.toString())) {
-        patientIds.add(appointment.patient._id.toString());
-        patients.push({
-          _id: appointment.patient._id,
-          name: appointment.patient.name
+    const patientsByid = new Map();
+    const now = new Date();
+    for (const appt of appointments) {
+      const id = appt.patient?._id?.toString() || appt.patient.toString();
+      if (!patientsByid.has(id)) {
+        patientsByid.set(id, {
+          _id: id,
+          name: appt.patientName,
+          email: appt.patientEmail,
+          appointmentCount: 0,
+          lastAppointment: appt.date,
+          nextAppointment: null,
+          status: "Active",
         });
       }
-    });
+      const entry = patientsByid.get(id);
+      entry.appointmentCount += 1;
+      if (new Date(appt.date) > new Date(entry.lastAppointment)) {
+        entry.lastAppointment = appt.date;
+      }
+      if (
+        appt.status === "scheduled" &&
+        new Date(appt.date) > now &&
+        (!entry.nextAppointment || new Date(appt.date) < new Date(entry.nextAppointment))
+      ) {
+        entry.nextAppointment = appt.date;
+      }
+    }
+    const data = Array.from(patientsByid.values());
+    return res.json({ success: true, count: data.length, data });
+  })
+);
 
-    res.json({
-      success: true,
-      data: patients
-    });
-  } catch (error) {
-    console.error("Error fetching patients:", error);
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-});
+router.get(
+  "/my-psychiatrists",
+  protectPatient,
+  asyncHandler(async (req, res) => {
+    const appointments = await Appointment.find({
+      patient: req.patient._id,
+      status: { $ne: "cancelled" },
+    }).populate("psychiatrist", "name");
+
+    const seen = new Set();
+    const data = [];
+    for (const a of appointments) {
+      const id = a.psychiatrist?._id?.toString();
+      if (id && !seen.has(id)) {
+        seen.add(id);
+        data.push({ _id: id, name: a.psychiatrist.name });
+      }
+    }
+    return res.json({ success: true, data });
+  })
+);
 
 module.exports = router;
