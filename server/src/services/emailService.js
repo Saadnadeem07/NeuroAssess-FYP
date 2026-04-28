@@ -131,11 +131,13 @@ exports.sendRejectionEmail = async (email, name, reason) => {
   }
 };
 
-// Verify transporter connection
-transporter.verify((error, success) => {
-  if (error) {
-    console.error("❌ SMTP connection error:", error);
-  } else {
-    console.log("✅ SMTP server is ready to send emails");
+// Expose a manual verify; do NOT run it on import to avoid side-effects
+// during cold-starts and test runs. Called from /api/health.
+exports.verifySmtp = async () => {
+  try {
+    await transporter.verify();
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: error.message };
   }
-});
+};

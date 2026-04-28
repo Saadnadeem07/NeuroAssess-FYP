@@ -72,15 +72,19 @@ export default function AdminSettings() {
   useEffect(() => {
     fetchSettings();
 
-    // Initialize user data
     if (user) {
+      const a = user as Record<string, unknown> & {
+        adminLevel?: string;
+        permissions?: string[];
+      };
       setFormData((prev) => ({
         ...prev,
         name: user.name || "",
-        adminLevel: user.adminLevel || "junior",
-        permissions: user.permissions || [],
+        adminLevel: a.adminLevel || "junior",
+        permissions: a.permissions || [],
       }));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const fetchSettings = async () => {

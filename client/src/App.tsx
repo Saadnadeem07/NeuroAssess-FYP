@@ -101,10 +101,7 @@ const ApiConnectivityCheck = () => {
   return null; // Connected successfully, no need to show anything
 };
 
-//buttons page to access all pages from 1 page
-const Buttons = lazy(() => import("./pages/Dummy Buttons"));
-
-// Lazy load other components
+// Lazy load components
 const HeroSection = lazy(() => import("./components/HeroSection"));
 const FeaturesSection = lazy(() => import("./components/FeaturesSection"));
 const FAQSection = lazy(() => import("./components/FAQSection"));
@@ -115,7 +112,6 @@ const HowItWorks = lazy(() => import("./components/HowItWorks"));
 const Login = lazy(() => import("./pages/auth/Login"));
 const Register = lazy(() => import("./pages/auth/Register"));
 const AdminLogin = lazy(() => import("./pages/auth/AdminLogin"));
-const AdminRegister = lazy(() => import("./pages/auth/AdminRegister"));
 const ForgotPassword = lazy(() => import("./pages/auth/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/auth/ResetPassword"));
 const OTPVerification = lazy(() => import("./pages/auth/OTPVerification"));
@@ -185,15 +181,10 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/admin/login" element={<AdminLogin />} />
-                <Route path="/admin/register" element={<AdminRegister />} />
                 <Route path="/verify-otp" element={<OTPVerification />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
-                {/* //all old pages */}
-
-                <Route path="/buttons" element={<Buttons />} />
-
-                {/* Role-based Dashboard routes - These are new dashboards ✅*/}
+                {/* Role-based dashboard routes */}
                 <Route
                   path="/patient/dashboard"
                   element={<PatientDashboard />}

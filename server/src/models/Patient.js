@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
+const { BCRYPT_COST, OTP_TTL_MS, OTP_MAX_ATTEMPTS } = require("../utils/constants");
 
 const patientSchema = new mongoose.Schema(
   {
@@ -56,10 +57,14 @@ const patientSchema = new mongoose.Schema(
     otp: {
       code: String,
       expiresAt: Date,
+      attempts: { type: Number, default: 0 },
+      lockedUntil: { type: Date, default: null },
     },
     loginOtp: {
       code: String,
       expiresAt: Date,
+      attempts: { type: Number, default: 0 },
+      lockedUntil: { type: Date, default: null },
     },
     resetPasswordToken: String,
     resetPasswordExpires: Date,
@@ -74,7 +79,7 @@ patientSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
 
   try {
-    const salt = await bcrypt.genSalt(10);
+    const salt = await bcrypt.genSalt(BCRYPT_COST);
     this.password = await bcrypt.hash(this.password, salt);
     next();
   } catch (error) {
@@ -93,67 +98,55 @@ patientSchema.methods.comparePassword = async function (candidatePassword) {
 
 // Generate OTP
 patientSchema.methods.generateOTP = function () {
-  // Generate a 6-digit OTP
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-  // Hash OTP before saving
+  const otp = crypto.randomInt(100000, 1000000).toString();
   this.otp = {
     code: crypto.createHash("sha256").update(otp).digest("hex"),
-    expiresAt: Date.now() + 10 * 60 * 1000, // OTP expires in 10 minutes
+    expiresAt: new Date(Date.now() + OTP_TTL_MS),
+    attempts: 0,
+    lockedUntil: null,
   };
-
-  return otp; // Return plain OTP for sending to user
+  return otp;
 };
 
-// Verify OTP
+// Verify OTP — returns one of: { ok: true } | { ok: false, reason: "expired" | "invalid" | "locked" }
 patientSchema.methods.verifyOTP = function (candidateOTP) {
-  // Check if OTP exists and not expired
   if (!this.otp || !this.otp.code || !this.otp.expiresAt) {
-    return false;
+    return { ok: false, reason: "invalid" };
   }
-
-  if (Date.now() > this.otp.expiresAt) {
-    return false;
+  if (this.otp.lockedUntil && this.otp.lockedUntil > new Date()) {
+    return { ok: false, reason: "locked" };
   }
-
-  // Hash candidate OTP and compare
-  const hashedOTP = crypto
-    .createHash("sha256")
-    .update(candidateOTP)
-    .digest("hex");
-  return this.otp.code === hashedOTP;
+  if (this.otp.expiresAt < new Date()) {
+    return { ok: false, reason: "expired" };
+  }
+  const hashedOTP = crypto.createHash("sha256").update(candidateOTP).digest("hex");
+  if (this.otp.code !== hashedOTP) {
+    this.otp.attempts = (this.otp.attempts || 0) + 1;
+    if (this.otp.attempts >= OTP_MAX_ATTEMPTS) {
+      this.otp.lockedUntil = new Date(Date.now() + OTP_TTL_MS);
+    }
+    return { ok: false, reason: "invalid" };
+  }
+  return { ok: true };
 };
 
-// Generate Login OTP
+// Login OTP not currently used in the auth flow; helpers retained for future use.
 patientSchema.methods.generateLoginOTP = function () {
-  // Generate a 6-digit OTP
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-  // Hash OTP before saving
+  const otp = crypto.randomInt(100000, 1000000).toString();
   this.loginOtp = {
     code: crypto.createHash("sha256").update(otp).digest("hex"),
-    expiresAt: Date.now() + 10 * 60 * 1000, // OTP expires in 10 minutes
+    expiresAt: new Date(Date.now() + OTP_TTL_MS),
+    attempts: 0,
+    lockedUntil: null,
   };
-
-  return otp; // Return plain OTP for sending to user
+  return otp;
 };
 
-// Verify Login OTP
 patientSchema.methods.verifyLoginOTP = function (candidateOTP) {
-  // Check if OTP exists and not expired
-  if (!this.loginOtp || !this.loginOtp.code || !this.loginOtp.expiresAt) {
-    return false;
-  }
-
-  if (Date.now() > this.loginOtp.expiresAt) {
-    return false;
-  }
-
-  // Hash candidate OTP and compare
-  const hashedOTP = crypto
-    .createHash("sha256")
-    .update(candidateOTP)
-    .digest("hex");
+  if (!this.loginOtp || !this.loginOtp.code || !this.loginOtp.expiresAt) return false;
+  if (this.loginOtp.lockedUntil && this.loginOtp.lockedUntil > new Date()) return false;
+  if (this.loginOtp.expiresAt < new Date()) return false;
+  const hashedOTP = crypto.createHash("sha256").update(candidateOTP).digest("hex");
   return this.loginOtp.code === hashedOTP;
 };
 

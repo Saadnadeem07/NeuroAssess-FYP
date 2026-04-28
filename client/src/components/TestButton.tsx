@@ -2,9 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/context/AuthContext";
-import axios from "axios";
-
-const API_URL = import.meta.env.VITE_API_URL;
+import api from "@/services/api";
 
 export default function TestButton() {
   const { user } = useAuth();
@@ -18,20 +16,11 @@ export default function TestButton() {
 
       if (!user) throw new Error("User not authenticated");
 
-      const token = localStorage.getItem("token");
-      const headers = { Authorization: `Bearer ${token}` };
-
-      const response = await axios.post(
-        `${API_URL}/tests`,
-        { userId: user._id },
-        { headers }
-      );
+      const response = await api.post("/tests", {});
 
       if (!response.data.success) {
         throw new Error(response.data.message || "Failed to start test");
       }
-
-      console.log("Test started:", response.data.data);
     } catch (err) {
       console.error("Test error:", err);
       if (err instanceof Error) {

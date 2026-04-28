@@ -35,7 +35,7 @@ export default function InitialTestPage() {
     { icon: User, label: "Home", id: "home" },
     { icon: Brain, label: "Initial Test", id: "initial-test" },
     { icon: Calendar, label: "Appointments", id: "appointments" },
-    { icon: MessageSquare, label: "All PSY", id: "userSeeAllPsy" },
+    { icon: MessageSquare, label: "Psychiatrists", id: "psychiatrists" },
     { icon: BookOpen, label: "Learning Plan", id: "learning-plan" },
     { icon: FileText, label: "Reports", id: "reports" },
     { icon: Settings, label: "Settings", id: "settings" },
@@ -52,7 +52,7 @@ export default function InitialTestPage() {
       case "appointments":
         navigate("/patient/dashboard?tab=appointments");
         break;
-      case "userSeeAllPsy":
+      case "psychiatrists":
         navigate("/patient/dashboard?tab=psychiatrists");
         break;
       case "learning-plan":

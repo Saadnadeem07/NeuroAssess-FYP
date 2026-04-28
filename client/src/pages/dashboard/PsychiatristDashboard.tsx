@@ -56,19 +56,9 @@ export default function PsychiatristDashboard() {
       } else if (currentRole === "admin") {
         navigate("/admin/dashboard");
       } else {
-        // If role is invalid or not set, redirect to login
-        localStorage.removeItem("currentRole"); // Clear invalid role
-        localStorage.removeItem("token"); // Also clear token
+        localStorage.removeItem("currentRole");
         navigate("/login");
       }
-      return;
-    }
-
-    // Check if token exists
-    const token = localStorage.getItem("token");
-    if (!token) {
-      console.log("No token found, redirecting to login");
-      navigate("/login");
       return;
     }
 

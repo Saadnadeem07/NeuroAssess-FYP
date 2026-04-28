@@ -2,53 +2,43 @@
 node_modules/
 
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
 
 # Build outputs
-/dist
-/build
+dist/
+build/
+coverage/
+.nyc_output/
 
-# Testing
-/coverage
+# Caches
+.cache/
+.npm/
+.eslintcache
 
-# Temporary files
-*.tmp
-*.temp
-.cache
-.temp
-
-# Editor directories and files
+# Editor / OS
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-*.sublime-workspace
-*.sublime-project
 
-# Debug
-.debug/
-debug.log
+# Temporary
+*.tmp
+*.temp
 
-# Optional npm cache directory
-.npm
-
-# Optional eslint cache
-.eslintcache
-
-# Optional stylelint cache
-.stylelintcache
-
-# Note: .env files are intentionally NOT ignored to allow them to be pushed to GitHub 
+# Environment files (only *.example variants are committed)
 .env
 .env.*
+!.env.example
+!.env.dev.example
+!.env.prod.example
+
+# User-uploaded handwriting samples (clinical PII; never commit)
+src/uploads/*
+!src/uploads/.gitkeep

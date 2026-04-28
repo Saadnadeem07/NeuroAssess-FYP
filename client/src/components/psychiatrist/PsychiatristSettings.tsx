@@ -95,28 +95,43 @@ export default function PsychiatristSettings({
 
   useEffect(() => {
     if (user) {
+      const u = user as Record<string, unknown> & {
+        availability?: { startTime?: string; endTime?: string; workingDays?: string[] };
+        phone_number?: string;
+        gender?: string;
+        date_of_birth?: string | number | Date;
+        country_of_nationality?: string;
+        country_of_graduation?: string;
+        date_of_graduation?: string | number | Date;
+        institute_name?: string;
+        license_number?: string;
+        degrees?: string;
+        years_of_experience?: number | string;
+        expertise?: string;
+        bio?: string;
+      };
       setFormData((prev) => ({
         ...prev,
         name: user.name || "",
-        startTime: user.availability?.startTime || "09:00",
-        endTime: user.availability?.endTime || "17:00",
-        workingDays: user.availability?.workingDays || [],
-        phone_number: user.phone_number || "",
-        gender: user.gender || "",
-        date_of_birth: user.date_of_birth
-          ? new Date(user.date_of_birth).toISOString().split("T")[0]
+        startTime: u.availability?.startTime || "09:00",
+        endTime: u.availability?.endTime || "17:00",
+        workingDays: u.availability?.workingDays || [],
+        phone_number: u.phone_number || "",
+        gender: u.gender || "",
+        date_of_birth: u.date_of_birth
+          ? new Date(u.date_of_birth).toISOString().split("T")[0]
           : "",
-        country_of_nationality: user.country_of_nationality || "",
-        country_of_graduation: user.country_of_graduation || "",
-        date_of_graduation: user.date_of_graduation
-          ? new Date(user.date_of_graduation).toISOString().split("T")[0]
+        country_of_nationality: u.country_of_nationality || "",
+        country_of_graduation: u.country_of_graduation || "",
+        date_of_graduation: u.date_of_graduation
+          ? new Date(u.date_of_graduation).toISOString().split("T")[0]
           : "",
-        institute_name: user.institute_name || "",
-        license_number: user.license_number || "",
-        degrees: user.degrees || "",
-        years_of_experience: user.years_of_experience?.toString() || "",
-        expertise: user.expertise || "",
-        bio: user.bio || "",
+        institute_name: u.institute_name || "",
+        license_number: u.license_number || "",
+        degrees: u.degrees || "",
+        years_of_experience: u.years_of_experience?.toString() || "",
+        expertise: u.expertise || "",
+        bio: u.bio || "",
       }));
     }
   }, [user]);

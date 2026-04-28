@@ -4,9 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/context/AuthContext";
-import axios, { AxiosError } from "axios";
-
-const API_URL = import.meta.env.VITE_API_URL;
+import api from "@/services/api";
+import { AxiosError } from "axios";
 
 interface ProfileManagementProps {
   userId: string;
@@ -18,12 +17,17 @@ export default function ProfileManagement({
   accountType,
 }: ProfileManagementProps) {
   const { user } = useAuth();
+  const u = user as
+    | (Record<string, unknown> & {
+        psychiatristProfile?: { expertise?: string; bio?: string };
+      })
+    | null;
   const [name, setName] = useState(user?.name || "");
   const [email, setEmail] = useState(user?.email || "");
   const [expertise, setExpertise] = useState(
-    user?.psychiatristProfile?.expertise || ""
+    u?.psychiatristProfile?.expertise || ""
   );
-  const [bio, setBio] = useState(user?.psychiatristProfile?.bio || "");
+  const [bio, setBio] = useState(u?.psychiatristProfile?.bio || "");
   const [certificateUrl, setCertificateUrl] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -34,9 +38,6 @@ export default function ProfileManagement({
       setLoading(true);
       setError("");
       setMessage("");
-
-      const token = localStorage.getItem("token");
-      const headers = { Authorization: `Bearer ${token}` };
 
       const updates = {
         name,
@@ -50,9 +51,7 @@ export default function ProfileManagement({
         }),
       };
 
-      const response = await axios.put(`${API_URL}/users/${userId}`, updates, {
-        headers,
-      });
+      const response = await api.put(`/users/${userId}`, updates);
 
       if (response.data.success) {
         setMessage("Profile updated successfully!");

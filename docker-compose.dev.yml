@@ -24,15 +24,16 @@ services:
       dockerfile: Dockerfile.dev
     ports:
       - "5000:5000"
+    # Copy server/.env.dev.example to server/.env.dev before running.
     env_file:
       - ./server/.env.dev
     volumes:
       - ./server:/app
       - /app/node_modules
     command: npm run dev
-
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5000/api/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped

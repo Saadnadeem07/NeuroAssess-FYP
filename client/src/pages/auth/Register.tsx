@@ -629,29 +629,24 @@ export default function Register() {
       }
 
       // Check if user ID exists in the response
-      const userId = response.data._id || response.data.id;
+      const data = response.data as Record<string, unknown> & {
+        _id?: string;
+        id?: string;
+        data?: { _id?: string };
+        user?: { _id?: string };
+        psychiatrist?: { _id?: string };
+      };
+      const userId = data._id || data.id;
       if (!userId) {
-        console.error("No user ID in response:", response.data);
+        console.error("No user ID in response:", data);
 
-        // Try to extract ID from other possible locations in the response
-        let extractedId = null;
-
-        // Check if the ID might be in a nested property
-        if (response.data.data && response.data.data._id) {
-          extractedId = response.data.data._id;
-          console.log("Found ID in response.data.data._id:", extractedId);
-        } else if (response.data.user && response.data.user._id) {
-          extractedId = response.data.user._id;
-          console.log("Found ID in response.data.user._id:", extractedId);
-        } else if (
-          response.data.psychiatrist &&
-          response.data.psychiatrist._id
-        ) {
-          extractedId = response.data.psychiatrist._id;
-          console.log(
-            "Found ID in response.data.psychiatrist._id:",
-            extractedId
-          );
+        let extractedId: string | null = null;
+        if (data.data && data.data._id) {
+          extractedId = data.data._id;
+        } else if (data.user && data.user._id) {
+          extractedId = data.user._id;
+        } else if (data.psychiatrist && data.psychiatrist._id) {
+          extractedId = data.psychiatrist._id;
         }
 
         if (extractedId) {

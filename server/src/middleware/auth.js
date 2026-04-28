@@ -1,254 +1,90 @@
-const jwt = require("jsonwebtoken");
 const Patient = require("../models/Patient");
 const Psychiatrist = require("../models/Psychiatrist");
 const Admin = require("../models/Admin");
+const AppError = require("../utils/AppError");
+const ERROR_CODES = require("../utils/errorCodes");
+const { verifyAccess } = require("../utils/tokens");
+const { ACCESS_COOKIE_NAME } = require("../utils/cookies");
+const asyncHandler = require("../utils/asyncHandler");
 
-// Middleware to protect patient routes
-const protectPatient = async (req, res, next) => {
-  try {
-    let token;
-
-    // Get token from Authorization header
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith("Bearer")
-    ) {
-      token = req.headers.authorization.split(" ")[1];
-    }
-    // Get token from cookie
-    else if (req.cookies && req.cookies.token) {
-      token = req.cookies.token;
-    }
-
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "Not authorized to access this route",
-      });
-    }
-
-    try {
-      // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-      // Get patient from token
-      const patient = await Patient.findById(decoded.id).select("-password");
-
-      if (!patient) {
-        return res.status(401).json({
-          success: false,
-          message: "Not authorized to access this route",
-        });
-      }
-
-      // Attach patient to request
-      req.patient = patient;
-
-      next();
-    } catch (error) {
-      return res.status(401).json({
-        success: false,
-        message: "Not authorized to access this route",
-      });
-    }
-  } catch (error) {
-    next(error);
-  }
+const ROLE_MODELS = {
+  patient: Patient,
+  psychiatrist: Psychiatrist,
+  admin: Admin,
 };
 
-// Middleware to protect psychiatrist routes
-const protectPsychiatrist = async (req, res, next) => {
-  try {
-    let token;
+const extractToken = (req) => {
+  // Cookie-only auth — Authorization: Bearer is no longer accepted.
+  return req.cookies?.[ACCESS_COOKIE_NAME] || null;
+};
 
-    // Get token from Authorization header
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith("Bearer")
-    ) {
-      token = req.headers.authorization.split(" ")[1];
-    }
-    // Get token from cookie
-    else if (req.cookies && req.cookies.token) {
-      token = req.cookies.token;
-    }
+const loadPrincipal = async (decoded) => {
+  const Model = ROLE_MODELS[decoded.role];
+  if (!Model) return null;
+  const principal = await Model.findById(decoded.sub).select("-password");
+  return principal ? { principal, role: decoded.role } : null;
+};
 
+// Builds a middleware that requires the principal to match `expectedRole`.
+const requireRole = (expectedRole) =>
+  asyncHandler(async (req, _res, next) => {
+    const token = extractToken(req);
     if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "Not authorized to access this route",
-      });
+      throw AppError.unauthorized("Not authenticated", ERROR_CODES.AUTH_TOKEN_INVALID);
     }
-
-    try {
-      // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-      // Get psychiatrist from token
-      const psychiatrist = await Psychiatrist.findById(decoded.id).select(
-        "-password"
+    const decoded = verifyAccess(token);
+    if (decoded.role !== expectedRole) {
+      throw AppError.forbidden(
+        `Access denied. ${expectedRole} role required.`,
+        ERROR_CODES.AUTH_FORBIDDEN
       );
-
-      if (!psychiatrist) {
-        return res.status(401).json({
-          success: false,
-          message: "Not authorized to access this route",
-        });
-      }
-
-      // Attach psychiatrist to request
-      req.psychiatrist = psychiatrist;
-
-      next();
-    } catch (error) {
-      return res.status(401).json({
-        success: false,
-        message: "Not authorized to access this route",
-      });
     }
-  } catch (error) {
-    next(error);
-  }
-};
-
-// Middleware to protect admin routes
-const protectAdmin = async (req, res, next) => {
-  try {
-    let token;
-
-    // Get token from Authorization header
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith("Bearer")
-    ) {
-      token = req.headers.authorization.split(" ")[1];
-    }
-    // Get token from cookie
-    else if (req.cookies && req.cookies.token) {
-      token = req.cookies.token;
-    }
-
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "Not authorized to access this route",
-      });
-    }
-
-    try {
-      // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-      // Get admin from token
-      const admin = await Admin.findById(decoded.id).select("-password");
-
-      if (!admin) {
-        return res.status(401).json({
-          success: false,
-          message: "Not authorized to access this route",
-        });
-      }
-
-      // Attach admin to request
-      req.admin = admin;
-
-      next();
-    } catch (error) {
-      return res.status(401).json({
-        success: false,
-        message: "Not authorized to access this route",
-      });
-    }
-  } catch (error) {
-    next(error);
-  }
-};
-
-// Middleware to check if psychiatrist is approved
-const isApprovedPsychiatrist = async (req, res, next) => {
-  try {
-    if (!req.psychiatrist) {
-      return res.status(403).json({
-        success: false,
-        message: "Access denied. Psychiatrist role required.",
-      });
-    }
-
-    if (!req.psychiatrist.isApproved) {
-      return res.status(403).json({
-        success: false,
-        message: "Your psychiatrist account is pending approval.",
-      });
-    }
-
+    const result = await loadPrincipal(decoded);
+    if (!result) throw AppError.unauthorized("Account not found");
+    req[expectedRole] = result.principal;
+    req.principal = { id: result.principal._id, role: expectedRole };
     next();
-  } catch (error) {
-    next(error);
+  });
+
+const protectPatient = requireRole("patient");
+const protectPsychiatrist = requireRole("psychiatrist");
+const protectAdmin = requireRole("admin");
+
+const protectPatientOrPsychiatrist = asyncHandler(async (req, _res, next) => {
+  const token = extractToken(req);
+  if (!token) {
+    throw AppError.unauthorized("Not authenticated", ERROR_CODES.AUTH_TOKEN_INVALID);
   }
-};
-
-// Middleware to accept either patient or psychiatrist
-const protectPatientOrPsychiatrist = async (req, res, next) => {
-  try {
-    let token;
-
-    // Get token from Authorization header
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith("Bearer")
-    ) {
-      token = req.headers.authorization.split(" ")[1];
-    }
-    // Get token from cookie
-    else if (req.cookies && req.cookies.token) {
-      token = req.cookies.token;
-    }
-
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "Not authorized to access this route",
-      });
-    }
-
-    try {
-      // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-      // First try to get patient
-      const patient = await Patient.findById(decoded.id).select("-password");
-      if (patient) {
-        req.patient = patient;
-        return next();
-      }
-
-      // If not a patient, try psychiatrist
-      const psychiatrist = await Psychiatrist.findById(decoded.id).select("-password");
-      if (psychiatrist) {
-        req.psychiatrist = psychiatrist;
-        return next();
-      }
-
-      // If neither, unauthorized
-      return res.status(401).json({
-        success: false,
-        message: "Not authorized to access this route",
-      });
-    } catch (error) {
-      return res.status(401).json({
-        success: false,
-        message: "Not authorized to access this route",
-      });
-    }
-  } catch (error) {
-    next(error);
+  const decoded = verifyAccess(token);
+  if (!["patient", "psychiatrist"].includes(decoded.role)) {
+    throw AppError.forbidden("Patient or psychiatrist role required");
   }
+  const result = await loadPrincipal(decoded);
+  if (!result) throw AppError.unauthorized("Account not found");
+  req[decoded.role] = result.principal;
+  req.principal = { id: result.principal._id, role: decoded.role };
+  next();
+});
+
+const isApprovedPsychiatrist = (req, _res, next) => {
+  if (!req.psychiatrist) {
+    return next(AppError.forbidden("Psychiatrist role required"));
+  }
+  if (!req.psychiatrist.isApproved) {
+    return next(
+      AppError.forbidden(
+        "Your psychiatrist account is pending approval.",
+        ERROR_CODES.AUTH_NOT_APPROVED
+      )
+    );
+  }
+  next();
 };
 
 module.exports = {
   protectPatient,
   protectPsychiatrist,
   protectAdmin,
-  isApprovedPsychiatrist,
   protectPatientOrPsychiatrist,
+  isApprovedPsychiatrist,
 };
